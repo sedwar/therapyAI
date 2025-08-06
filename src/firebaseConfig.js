@@ -1,5 +1,8 @@
-// jest-dom adds custom jest matchers for asserting on DOM nodes.
-// allows you to do things like:
-// expect(element).toHaveTextContent(/react/i)
-// learn more: https://github.com/testing-library/jest-dom
-import '@testing-library/jest-dom';
+export const firebaseConfig = {
+    apiKey: "your-api-key",
+    authDomain: "your-auth-domain",
+    projectId: "your-project-id",
+    storageBucket: "your-storage-bucket",
+    messagingSenderId: "your-messaging-sender-id",
+    appId: "your-app-id"
+};
