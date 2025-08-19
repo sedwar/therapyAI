@@ -168,33 +168,33 @@ const App = () => {
   // Auth Screen
   if (currentScreen === 'auth') {
     return (
-      <div className={`min-h-screen ${theme.colors.bg} flex items-center justify-center p-4`}>
+      <div className={`min-h-screen ${theme.colors.bg} flex items-center justify-center px-4 py-8`}>
         <motion.div 
           className="max-w-sm w-full"
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <motion.div className="text-center mb-8">
-            <h2 className={`text-3xl font-light ${theme.colors.text} mb-3`}>
+          <motion.div className="text-center mb-6 md:mb-8">
+            <h2 className={`text-2xl md:text-3xl font-light ${theme.colors.text} mb-2 md:mb-3`}>
               {authMode === 'signin' ? 'Welcome back' : 'Join AURA AI'}
             </h2>
-            <p className={`${theme.colors.textSecondary} text-lg`}>
+            <p className={`${theme.colors.textSecondary} text-base md:text-lg`}>
               {authMode === 'signin' ? 'Sign in to continue' : 'Create your account'}
             </p>
           </motion.div>
 
           <motion.div 
-            className={`${theme.colors.card} border rounded-3xl p-8 ${theme.shadows.glow}`}
+            className={`${theme.colors.card} border rounded-2xl md:rounded-3xl p-6 md:p-8 ${theme.shadows.glow}`}
             layout
           >
-            <div className="space-y-5">
+            <div className="space-y-4 md:space-y-5">
               <input
                 type="email"
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className={`w-full p-4 rounded-2xl border ${theme.colors.input} backdrop-blur-sm transition-all focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50`}
+                className={`w-full p-4 md:p-4 rounded-xl md:rounded-2xl border ${theme.colors.input} backdrop-blur-sm transition-all focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 text-base md:text-sm`}
               />
               
               <input
@@ -203,12 +203,12 @@ const App = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleEmailAuth()}
-                className={`w-full p-4 rounded-2xl border ${theme.colors.input} backdrop-blur-sm transition-all focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50`}
+                className={`w-full p-4 md:p-4 rounded-xl md:rounded-2xl border ${theme.colors.input} backdrop-blur-sm transition-all focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 text-base md:text-sm`}
               />
               
               <motion.button
                 onClick={handleEmailAuth}
-                className={`w-full ${theme.colors.accent} text-white p-4 rounded-2xl font-medium ${theme.shadows.glow} hover:${theme.shadows.glowLg} transition-all`}
+                className={`w-full ${theme.colors.accent} text-white p-4 md:p-4 rounded-xl md:rounded-2xl font-medium ${theme.shadows.glow} hover:${theme.shadows.glowLg} transition-all text-base md:text-sm`}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
@@ -319,10 +319,11 @@ const App = () => {
               onClick={() => setShowMobileMenu(false)}
             >
               <motion.div
-                className={`${theme.colors.card} border rounded-t-3xl md:rounded-3xl p-8 w-full md:max-w-sm ${theme.shadows.glowLg}`}
-                initial={{ y: 300, opacity: 0 }}
+                className={`${theme.colors.card} border rounded-t-3xl md:rounded-3xl p-6 md:p-8 w-full md:max-w-sm ${theme.shadows.glowLg} max-h-[80vh] overflow-y-auto`}
+                initial={{ y: "100%", opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 300, opacity: 0 }}
+                exit={{ y: "100%", opacity: 0 }}
+                transition={{ type: "spring", damping: 25, stiffness: 500 }}
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="space-y-6">
@@ -343,14 +344,14 @@ const App = () => {
                         setCurrentScreen('journal');
                         setShowMobileMenu(false);
                       }}
-                      className={`w-full text-left p-3 rounded-xl hover:${theme.colors.card} transition-colors flex items-center space-x-3 ${
+                      className={`w-full text-left p-4 md:p-3 rounded-xl hover:${theme.colors.card} transition-colors flex items-center space-x-3 ${
                         userTier === 'free' ? 'opacity-60' : ''
                       }`}
                     >
-                      <Heart className="w-5 h-5" />
-                      <span>Journal</span>
+                      <Heart className="w-6 h-6 md:w-5 md:h-5" />
+                      <span className="text-base md:text-sm">Journal</span>
                       {userTier === 'free' && (
-                        <div className="ml-auto bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 rounded-full text-xs">
+                        <div className="ml-auto bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1.5 md:px-2 md:py-1 rounded-full text-xs">
                           Premium
                         </div>
                       )}
@@ -362,10 +363,10 @@ const App = () => {
                           setCurrentScreen('upgrade');
                           setShowMobileMenu(false);
                         }}
-                        className="w-full text-left p-3 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 text-white transition-colors flex items-center space-x-3"
+                        className="w-full text-left p-4 md:p-3 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 text-white transition-colors flex items-center space-x-3"
                       >
-                        <Sparkles className="w-5 h-5" />
-                        <span>Upgrade to Premium</span>
+                        <Sparkles className="w-6 h-6 md:w-5 md:h-5" />
+                        <span className="text-base md:text-sm">Upgrade to Premium</span>
                       </button>
                     )}
                   </div>
