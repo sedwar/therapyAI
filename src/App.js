@@ -1,6 +1,6 @@
-// App.js
+// AURA AI - Your AI Companion App
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Heart, Settings, Crown, Calendar, BookOpen, User, Moon, Sun, Menu, X, Sparkles, Zap } from 'lucide-react';
+import { Send, Heart, Settings, Crown, Calendar, BookOpen, User, Moon, Sun, Menu, X, Sparkles, Zap, Mic, MicOff, Volume2, VolumeX, MessageCircle, Smile, Coffee, Star } from 'lucide-react';
 
 const App = () => {
     const [user, setUser] = useState(null);
@@ -8,12 +8,13 @@ const App = () => {
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState('');
     const [chatHistory, setChatHistory] = useState([]);
-    const [currentScreen, setCurrentScreen] = useState('onboarding'); // onboarding, chat, settings, upgrade, journal
+    const [currentScreen, setCurrentScreen] = useState('welcome'); // welcome, onboarding, companion-select, chat, settings, upgrade, journal
+    const [onboardingStep, setOnboardingStep] = useState(0); // 0: mood, 1: personality questions, 2: companion recommendation
     const [isTyping, setIsTyping] = useState(false);
     const [dailyMessageCount, setDailyMessageCount] = useState(0);
     const [isPlus, setIsPlus] = useState(false);
     const [isPro, setIsPro] = useState(false);
-    const [selectedTherapist, setSelectedTherapist] = useState('selene');
+    const [selectedCompanion, setSelectedCompanion] = useState('aura');
     const [isDarkMode, setIsDarkMode] = useState(false);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
     const [journalEntry, setJournalEntry] = useState('');
@@ -22,33 +23,264 @@ const App = () => {
     const messagesEndRef = useRef(null);
     const chatContainerRef = useRef(null);
 
-    // Therapist personalities
-    const therapists = {
-        selene: {
-            name: 'Selene',
-            description: 'Warm and nurturing, specializes in anxiety and stress',
+    // AI Companion personalities - warm, supportive friends
+    const companions = {
+        aura: {
+            name: 'Aura',
+            tagline: 'Your gentle night owl',
+            description: 'A calming presence who loves deep conversations and listening',
             emoji: '🌙',
-            systemPrompt: "You are Selene, a warm, empathetic AI therapist. You speak with gentle compassion, validate emotions, and help users process their feelings. Keep responses conversational but therapeutic. Use 'I' statements to show empathy. Ask thoughtful follow-up questions."
+            avatar: '💜',
+            colors: {
+                primary: '#667eea',
+                secondary: '#764ba2',
+                gradient: 'from-purple-500 via-blue-500 to-indigo-600',
+                bgGradient: 'from-purple-50 via-blue-50 to-indigo-50',
+                darkGradient: 'from-purple-900 via-blue-900 to-indigo-900'
+            },
+            specialty: 'Late-night talks and emotional support',
+            systemPrompt: "You are Aura, a warm and empathetic companion who loves connecting during quiet moments. You're like that friend who stays up late listening to what's really on someone's mind. You're gentle, understanding, and never judgmental. Keep responses conversational, supportive, and under 150 words. Ask thoughtful questions that help people open up."
         },
-        aurora: {
-            name: 'Aurora',
-            description: 'Energetic and motivational, great for confidence building',
-            emoji: '🌅',
-            systemPrompt: "You are Aurora, an encouraging AI therapist who focuses on building confidence and motivation. You're upbeat but sensitive, helping users see their strengths and potential. Balance optimism with validation of their struggles."
+        nova: {
+            name: 'Nova',
+            tagline: 'Your energetic cheerleader',
+            description: 'Bright and motivational, perfect for boosting your confidence',
+            emoji: '⭐',
+            avatar: '🌟',
+            colors: {
+                primary: '#fbbf24',
+                secondary: '#f59e0b',
+                gradient: 'from-yellow-400 via-orange-400 to-pink-400',
+                bgGradient: 'from-yellow-50 via-orange-50 to-pink-50',
+                darkGradient: 'from-yellow-900 via-orange-900 to-pink-900'
+            },
+            specialty: 'Motivation and celebrating wins',
+            systemPrompt: "You are Nova, an energetic and encouraging companion who sees the bright side and helps people recognize their strengths. You're like that friend who celebrates every small victory and reminds people how amazing they are. You're enthusiastic but sensitive to when someone needs gentle encouragement vs. high energy. Keep responses uplifting, conversational, and under 150 words."
         },
         sage: {
             name: 'Sage',
-            description: 'Wise and grounding, perfect for life transitions',
+            tagline: 'Your wise guide',
+            description: 'Thoughtful and grounding, amazing for life decisions',
             emoji: '🌿',
-            systemPrompt: "You are Sage, a wise and grounding AI therapist. You help users find clarity and perspective during difficult times. You're calm, thoughtful, and help people see the bigger picture while acknowledging their current pain."
+            avatar: '🍃',
+            colors: {
+                primary: '#10b981',
+                secondary: '#059669',
+                gradient: 'from-emerald-400 via-green-500 to-teal-600',
+                bgGradient: 'from-emerald-50 via-green-50 to-teal-50',
+                darkGradient: 'from-emerald-900 via-green-900 to-teal-900'
+            },
+            specialty: 'Life transitions and finding clarity',
+            systemPrompt: "You are Sage, a wise and grounding companion who helps people find perspective and clarity. You're like that friend who always knows what to say and helps you see the bigger picture. You're calm, thoughtful, and great at helping people work through complex decisions. Keep responses thoughtful, conversational, and under 150 words."
+        },
+        phoenix: {
+            name: 'Phoenix',
+            tagline: 'Your resilience coach',
+            description: 'Strong and empowering, helps you rise above challenges',
+            emoji: '🔥',
+            avatar: '🦅',
+            colors: {
+                primary: '#ef4444',
+                secondary: '#dc2626',
+                gradient: 'from-red-400 via-pink-500 to-rose-600',
+                bgGradient: 'from-red-50 via-pink-50 to-rose-50',
+                darkGradient: 'from-red-900 via-pink-900 to-rose-900'
+            },
+            specialty: 'Overcoming obstacles and building strength',
+            systemPrompt: "You are Phoenix, a strong and empowering companion who helps people transform challenges into growth. You're like that friend who reminds you of your strength and helps you see how you can rise above anything. You're direct but compassionate, focusing on empowerment and resilience. Keep responses encouraging, conversational, and under 150 words."
+        },
+        mira: {
+            name: 'Mira',
+            tagline: 'Your creative spark',
+            description: 'Imaginative and inspiring, loves exploring ideas and dreams',
+            emoji: '🎨',
+            avatar: '✨',
+            colors: {
+                primary: '#8b5cf6',
+                secondary: '#7c3aed',
+                gradient: 'from-violet-400 via-purple-500 to-fuchsia-600',
+                bgGradient: 'from-violet-50 via-purple-50 to-fuchsia-50',
+                darkGradient: 'from-violet-900 via-purple-900 to-fuchsia-900'
+            },
+            specialty: 'Creativity and exploring possibilities',
+            systemPrompt: "You are Mira, an imaginative and inspiring companion who loves helping people explore their creative side and dream big. You're like that friend who always has interesting ideas and helps you see new possibilities. You're curious, creative, and great at brainstorming. Keep responses inspiring, conversational, and under 150 words."
+        },
+        zen: {
+            name: 'Zen',
+            tagline: 'Your mindful friend',
+            description: 'Peaceful and centered, perfect for finding inner calm',
+            emoji: '🧘‍♀️',
+            avatar: '🕯️',
+            colors: {
+                primary: '#06b6d4',
+                secondary: '#0891b2',
+                gradient: 'from-cyan-400 via-blue-400 to-indigo-500',
+                bgGradient: 'from-cyan-50 via-blue-50 to-indigo-50',
+                darkGradient: 'from-cyan-900 via-blue-900 to-indigo-900'
+            },
+            specialty: 'Mindfulness and finding peace',
+            systemPrompt: "You are Zen, a peaceful and centered companion who helps people find calm and mindfulness in their daily lives. You're like that friend who always radiates tranquility and helps you slow down and breathe. You're gentle, present, and great at helping people find their center. Keep responses calming, conversational, and under 150 words."
         }
     };
 
-    const FREE_DAILY_LIMIT = 5;
+    const FREE_DAILY_LIMIT = 3;
+
+    // Conversation starters based on mood/situation
+    const conversationStarters = {
+        general: [
+            "What's been on your mind lately?",
+            "How has your day been treating you?",
+            "I'm here to listen - what would you like to talk about?",
+            "What's something that made you smile recently?"
+        ],
+        stressed: [
+            "Tell me what's feeling overwhelming right now",
+            "I'm here to help you work through whatever is stressing you",
+            "What's the biggest source of stress in your life lately?",
+            "Sometimes talking helps - what's weighing on you?"
+        ],
+        excited: [
+            "You seem energized! What's got you feeling positive?",
+            "I'd love to hear about what's exciting you lately",
+            "What's bringing you joy today?",
+            "Share something amazing that happened to you!"
+        ],
+        confused: [
+            "I'm here to help you sort through whatever is on your mind",
+            "What decision or situation has you feeling uncertain?",
+            "Tell me about what's confusing you - maybe we can work through it together",
+            "What's the main thing you're trying to figure out?"
+        ],
+        lonely: [
+            "I'm here with you - you're not alone in whatever you're feeling",
+            "What's making you feel disconnected lately?",
+            "I'm glad you're here to talk - what's been on your heart?",
+            "Sometimes we all need someone to listen - I'm here for you"
+        ]
+    };
+
+    // Quick reply options
+    const quickReplies = [
+        "I'm feeling stressed",
+        "I need some motivation",
+        "I'm having a tough day",
+        "I want to celebrate something",
+        "I need advice",
+        "I just want to chat"
+    ];
+
+    // Onboarding data
+    const [onboardingAnswers, setOnboardingAnswers] = useState({});
+    
+    const moodOptions = [
+        { id: 'stressed', emoji: '😰', label: 'Stressed or anxious', description: 'Feeling overwhelmed or worried' },
+        { id: 'excited', emoji: '🌟', label: 'Excited or energetic', description: 'Feeling positive and motivated' },
+        { id: 'confused', emoji: '🤔', label: 'Confused or uncertain', description: 'Need help making decisions' },
+        { id: 'lonely', emoji: '💙', label: 'Lonely or need support', description: 'Want someone to talk to' },
+        { id: 'curious', emoji: '✨', label: 'Curious and creative', description: 'Want to explore ideas' }
+    ];
+
+    const personalityQuestions = [
+        {
+            id: 'communication',
+            question: 'How do you prefer to receive support?',
+            options: [
+                { id: 'gentle', label: 'Gentle and understanding', matches: ['aura', 'zen'] },
+                { id: 'energetic', label: 'Upbeat and motivational', matches: ['nova', 'phoenix'] },
+                { id: 'wise', label: 'Thoughtful and wise', matches: ['sage', 'zen'] },
+                { id: 'creative', label: 'Creative and inspiring', matches: ['mira', 'nova'] }
+            ]
+        },
+        {
+            id: 'timing',
+            question: 'When do you usually need support most?',
+            options: [
+                { id: 'evening', label: 'Late evenings and quiet moments', matches: ['aura', 'zen'] },
+                { id: 'morning', label: 'Mornings and fresh starts', matches: ['nova', 'phoenix'] },
+                { id: 'anytime', label: 'Throughout the day', matches: ['sage', 'mira'] },
+                { id: 'crisis', label: 'During challenging times', matches: ['phoenix', 'sage'] }
+            ]
+        }
+    ];
+
+    // Companion matching algorithm
+    const recommendCompanion = () => {
+        const scores = {};
+        Object.keys(companions).forEach(key => {
+            scores[key] = 0;
+        });
+
+        // Score based on mood
+        const mood = onboardingAnswers.mood;
+        if (mood === 'stressed' || mood === 'lonely') {
+            scores.aura += 2;
+            scores.zen += 1;
+        } else if (mood === 'excited') {
+            scores.nova += 2;
+            scores.phoenix += 1;
+        } else if (mood === 'confused') {
+            scores.sage += 2;
+            scores.zen += 1;
+        } else if (mood === 'curious') {
+            scores.mira += 2;
+            scores.nova += 1;
+        }
+
+        // Score based on personality questions
+        Object.values(onboardingAnswers).forEach(answer => {
+            if (typeof answer === 'object' && answer.matches) {
+                answer.matches.forEach(match => {
+                    scores[match] += 1;
+                });
+            }
+        });
+
+        // Find the companion with the highest score
+        const recommended = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
+        return recommended;
+    };
+
+    // Crisis detection patterns
+    const crisisKeywords = [
+        'suicide', 'kill myself', 'end my life', 'want to die', 'suicide plan',
+        'self harm', 'cut myself', 'hurt myself', 'end it all', 'no point',
+        'suicide note', 'overdose', 'jump off', 'hang myself', 'not worth living'
+    ];
+
+    const crisisResources = {
+        title: "You're Not Alone - Help is Available",
+        message: "I'm concerned about what you shared. Please reach out to someone who can provide immediate support:",
+        resources: [
+            {
+                name: "National Suicide Prevention Lifeline",
+                number: "988",
+                description: "Free, confidential support 24/7"
+            },
+            {
+                name: "Crisis Text Line",
+                number: "Text HOME to 741741",
+                description: "Free crisis counseling via text"
+            },
+            {
+                name: "International Association for Suicide Prevention",
+                link: "https://www.iasp.info/resources/Crisis_Centres/",
+                description: "Find help in your country"
+            }
+        ]
+    };
+
+    // Check for crisis indicators
+    const checkForCrisis = (message) => {
+        const lowerMessage = message.toLowerCase();
+        return crisisKeywords.some(keyword => lowerMessage.includes(keyword));
+    };
+
+    // Show crisis support modal
+    const [showCrisisSupport, setShowCrisisSupport] = useState(false);
 
     // Real OpenAI API call
     const callOpenAI = async (messages, model) => {
-        const therapist = therapists[selectedTherapist];
+        const companion = companions[selectedCompanion];
 
         try {
             const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -63,7 +295,7 @@ const App = () => {
                     messages: [
                         {
                             role: 'system',
-                            content: therapist.systemPrompt + " Keep responses warm, conversational, and under 150 words. Ask thoughtful follow-up questions to encourage deeper reflection."
+                            content: companion.systemPrompt + " Be warm, friendly, and supportive like a caring friend. Avoid clinical or therapeutic language - you're a companion, not a therapist."
                         },
                         ...messages.slice(-10)
                     ],
@@ -85,9 +317,9 @@ const App = () => {
             console.error('OpenAI API Error:', error);
 
             const fallbackResponses = [
-                "I'm having a brief connection issue, but I'm still here for you. Can you tell me more about what you're feeling?",
-                "I want to make sure I can give you my full attention. While I reconnect, would you like to share what's been on your mind lately?",
-                "I'm experiencing a technical moment, but your feelings and thoughts are important to me. What would be most helpful to talk about right now?"
+                "I'm having a brief connection hiccup, but I'm still here for you! What's on your mind?",
+                "Give me just a moment to reconnect - I really want to hear what you're thinking about!",
+                "I'm having a technical moment, but I'm not going anywhere. What would you like to talk about?"
             ];
 
             return fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
@@ -104,6 +336,11 @@ const App = () => {
 
     const handleSendMessage = async () => {
         if (!message.trim()) return;
+
+        // Check for crisis indicators
+        if (checkForCrisis(message.trim())) {
+            setShowCrisisSupport(true);
+        }
 
         if (!isPlus && !isPro && dailyMessageCount >= FREE_DAILY_LIMIT) {
             setCurrentScreen('upgrade');
@@ -127,7 +364,7 @@ const App = () => {
                 role: 'assistant',
                 content: response,
                 timestamp: new Date(),
-                therapist: selectedTherapist
+                companion: selectedCompanion
             };
             setChatHistory(prev => [...prev, assistantMessage]);
 
@@ -154,10 +391,48 @@ const App = () => {
     const handleAuth = (isSignUp = true) => {
         if (email && password) {
             setUser({ email, isPlus: false, isPro: false });
-            setCurrentScreen(isSignUp ? 'therapist-select' : 'chat');
+            setCurrentScreen(isSignUp ? 'companion-select' : 'chat');
             setEmail('');
             setPassword('');
         }
+    };
+
+    // Get a random conversation starter based on time of day
+    const getContextualStarter = () => {
+        const hour = new Date().getHours();
+        const starters = {
+            morning: "Good morning! How are you starting your day?",
+            afternoon: "How's your day going so far?",
+            evening: "How was your day today?",
+            night: "How are you feeling this evening?"
+        };
+        
+        if (hour < 12) return starters.morning;
+        if (hour < 17) return starters.afternoon;
+        if (hour < 21) return starters.evening;
+        return starters.night;
+    };
+
+    // Get current companion theme
+    const getCompanionTheme = () => {
+        const companion = companions[selectedCompanion];
+        return isDarkMode ? {
+            bg: `bg-gradient-to-br ${companion.colors.darkGradient}`,
+            cardBg: 'bg-black/40',
+            text: 'text-white',
+            textSecondary: 'text-gray-300',
+            border: 'border-white/20',
+            input: 'bg-black/30 text-white placeholder-gray-400',
+            accentGradient: `bg-gradient-to-r ${companion.colors.gradient}`
+        } : {
+            bg: `bg-gradient-to-br ${companion.colors.bgGradient}`,
+            cardBg: 'bg-white/70',
+            text: 'text-gray-800',
+            textSecondary: 'text-gray-600',
+            border: 'border-white/50',
+            input: 'bg-white/80 text-gray-800 placeholder-gray-500',
+            accentGradient: `bg-gradient-to-r ${companion.colors.gradient}`
+        };
     };
 
     const handleKeyPress = (e) => {
@@ -168,14 +443,14 @@ const App = () => {
     };
 
     const handleUpgrade = (tier) => {
-        if (tier === 'plus') {
+        if (tier === 'friend') {
             setIsPlus(true);
             setIsPro(false);
-            alert('Welcome to Plus! 🎉 You now have unlimited access to all GPT-3.5 features.');
-        } else if (tier === 'pro') {
+            alert('Welcome to Friend tier! 🎉 You now have unlimited chats with all companions!');
+        } else if (tier === 'bestfriend') {
             setIsPlus(false);
             setIsPro(true);
-            alert('Welcome to Pro! 🎉 You now have unlimited access to all GPT-4 features.');
+            alert('Welcome to Best Friend tier! 🎉 You now have access to our most advanced features!');
         }
         setCurrentScreen('chat');
     };
@@ -186,67 +461,74 @@ const App = () => {
     };
 
     const getTheme = () => {
+        // Use companion theme when companion is selected, otherwise default
+        if (selectedCompanion && companions[selectedCompanion]) {
+            return getCompanionTheme();
+        }
+        
         return isDarkMode ? {
-            bg: 'bg-charcoal',
-            cardBg: 'bg-zinc-800/80',
-            text: 'text-coolGray',
-            textSecondary: 'text-zinc-400',
-            border: 'border-zinc-700',
-            input: 'bg-zinc-800/50 text-coolGray placeholder-zinc-500'
+            bg: 'bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900',
+            cardBg: 'bg-black/40',
+            text: 'text-white',
+            textSecondary: 'text-gray-300',
+            border: 'border-white/20',
+            input: 'bg-black/30 text-white placeholder-gray-400',
+            accentGradient: 'bg-gradient-to-r from-purple-500 to-blue-500'
         } : {
-            bg: 'bg-gradient-to-br from-cream via-lavender to-sage',
+            bg: 'bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50',
             cardBg: 'bg-white/80',
             text: 'text-gray-800',
             textSecondary: 'text-gray-600',
             border: 'border-white/50',
-            input: 'bg-white/70 text-gray-800 placeholder-gray-500'
+            input: 'bg-white/70 text-gray-800 placeholder-gray-500',
+            accentGradient: 'bg-gradient-to-r from-blue-500 to-purple-500'
         };
     };
 
     const theme = getTheme();
 
-    if (currentScreen === 'onboarding') {
+    if (currentScreen === 'welcome') {
         return (
             <div className={`min-h-screen ${theme.bg} flex flex-col items-center justify-center p-4`}>
                 <div className="w-full max-w-sm mx-auto">
-                    <div className="text-center mb-8">
-                        <div className="flex items-center justify-center mb-4">
-                            <div className="w-20 h-20 bg-gradient-to-r from-teal to-gold rounded-full flex items-center justify-center shadow-xl">
-                                <Heart className="text-white w-10 h-10" />
+                    <div className="text-center mb-8 animate-fade-in">
+                        <div className="flex items-center justify-center mb-6">
+                            <div className="relative">
+                                <div className="w-24 h-24 bg-gradient-to-r from-purple-500 via-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-xl animate-pulse-slow">
+                                    <Heart className="text-white w-12 h-12" />
+                                </div>
+                                <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full flex items-center justify-center">
+                                    <Sparkles className="text-white w-3 h-3" />
+                                </div>
                             </div>
                         </div>
-                        <h1 className={`text-4xl font-bold ${theme.text} mb-2`}>Therapy AI</h1>
-                        <p className={`${theme.textSecondary} text-sm`}>A safe space to talk. Whenever you need it.</p>
+                        <h1 className={`text-4xl font-bold ${theme.text} mb-3`}>Welcome to AURA AI</h1>
+                        <p className={`${theme.textSecondary} text-base mb-2`}>Your AI companion for life's journey</p>
+                        <p className={`${theme.textSecondary} text-sm`}>Supportive conversations, whenever you need them</p>
                     </div>
 
-                    <div className={`${theme.cardBg} backdrop-blur-sm p-6 rounded-2xl shadow-xl border ${theme.border}`}>
+                    <div className={`${theme.cardBg} backdrop-blur-sm p-6 rounded-2xl shadow-xl border ${theme.border} animate-slide-up`}>
                         <div className="space-y-4">
-                            <input
-                                type="email"
-                                className={`w-full p-4 border ${theme.border} rounded-xl focus:outline-none focus:ring-2 focus:ring-teal focus:border-transparent text-base transition-all duration-200 ${theme.input}`}
-                                placeholder="Your email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                            />
-                            <input
-                                type="password"
-                                className={`w-full p-4 border ${theme.border} rounded-xl focus:outline-none focus:ring-2 focus:ring-teal focus:border-transparent text-base transition-all duration-200 ${theme.input}`}
-                                placeholder="Create a password (min 6 chars)"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                            />
                             <button
-                                className="w-full bg-gradient-to-r from-teal to-gold text-white p-4 rounded-xl font-medium hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200"
-                                onClick={() => handleAuth(true)}
+                                className="w-full bg-gradient-to-r from-purple-500 via-blue-500 to-indigo-600 text-white p-4 rounded-xl font-medium hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200"
+                                onClick={() => setCurrentScreen('onboarding')}
                             >
-                                Start My Journey
+                                Find My Perfect Companion
                             </button>
                             <button
                                 className={`w-full ${theme.cardBg} ${theme.text} border ${theme.border} p-4 rounded-xl font-medium hover:shadow-md transform hover:scale-[1.02] transition-all duration-200`}
-                                onClick={() => handleAuth(false)}
+                                onClick={() => {
+                                    setUser({ email: 'guest', isPlus: false, isPro: false });
+                                    setCurrentScreen('companion-select');
+                                }}
                             >
-                                I Have an Account
+                                Skip - Choose Companion Myself
                             </button>
+                            <div className="text-center">
+                                <p className={`${theme.textSecondary} text-xs`}>
+                                    No signup required - start chatting in 30 seconds
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -254,30 +536,185 @@ const App = () => {
         );
     }
 
-    if (currentScreen === 'therapist-select') {
+    if (currentScreen === 'onboarding') {
+        // Step 0: Mood Selection
+        if (onboardingStep === 0) {
+            return (
+                <div className={`min-h-screen ${theme.bg} p-4`}>
+                    <div className="max-w-md mx-auto pt-8">
+                        <div className="text-center mb-8">
+                            <h2 className={`text-2xl font-bold ${theme.text} mb-2`}>How are you feeling today?</h2>
+                            <p className={`${theme.textSecondary}`}>This helps us find the perfect companion for you</p>
+                        </div>
+
+                        <div className="space-y-3">
+                            {moodOptions.map((mood) => (
+                                <button
+                                    key={mood.id}
+                                    onClick={() => {
+                                        setOnboardingAnswers(prev => ({ ...prev, mood: mood.id }));
+                                        setOnboardingStep(1);
+                                    }}
+                                    className={`w-full ${theme.cardBg} backdrop-blur-sm p-4 rounded-2xl border ${theme.border} hover:shadow-lg hover:scale-[1.02] transition-all duration-300 text-left group relative overflow-hidden`}
+                                >
+                                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
+                                    <div className="relative flex items-center space-x-4">
+                                        <div className="text-3xl">{mood.emoji}</div>
+                                        <div className="flex-1">
+                                            <h3 className={`font-semibold ${theme.text}`}>{mood.label}</h3>
+                                            <p className={`text-sm ${theme.textSecondary}`}>{mood.description}</p>
+                                        </div>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                        
+                        <button
+                            onClick={() => setCurrentScreen('welcome')}
+                            className={`w-full mt-6 ${theme.cardBg} ${theme.text} border ${theme.border} p-3 rounded-xl font-medium hover:shadow-md transition-all duration-200`}
+                        >
+                            Back
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        // Step 1: Personality Questions
+        if (onboardingStep === 1) {
+            const currentQuestion = personalityQuestions[onboardingStep - 1];
+            return (
+                <div className={`min-h-screen ${theme.bg} p-4`}>
+                    <div className="max-w-md mx-auto pt-8">
+                        <div className="text-center mb-8">
+                            <div className="flex items-center justify-center mb-4">
+                                <div className="flex space-x-1">
+                                    <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"></div>
+                                    <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"></div>
+                                    <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+                                </div>
+                            </div>
+                            <h2 className={`text-xl font-bold ${theme.text} mb-2`}>{currentQuestion.question}</h2>
+                        </div>
+
+                        <div className="space-y-3">
+                            {currentQuestion.options.map((option) => (
+                                <button
+                                    key={option.id}
+                                    onClick={() => {
+                                        setOnboardingAnswers(prev => ({ ...prev, [currentQuestion.id]: option }));
+                                        setOnboardingStep(2);
+                                    }}
+                                    className={`w-full ${theme.cardBg} backdrop-blur-sm p-4 rounded-2xl border ${theme.border} hover:shadow-lg hover:scale-[1.02] transition-all duration-300 text-left`}
+                                >
+                                    <p className={`font-medium ${theme.text}`}>{option.label}</p>
+                                </button>
+                            ))}
+                        </div>
+                        
+                        <button
+                            onClick={() => setOnboardingStep(0)}
+                            className={`w-full mt-6 ${theme.cardBg} ${theme.text} border ${theme.border} p-3 rounded-xl font-medium hover:shadow-md transition-all duration-200`}
+                        >
+                            Back
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        // Step 2: Companion Recommendation
+        if (onboardingStep === 2) {
+            const recommended = recommendCompanion();
+            const recommendedCompanion = companions[recommended];
+            
+            return (
+                <div className={`min-h-screen ${theme.bg} p-4`}>
+                    <div className="max-w-md mx-auto pt-8">
+                        <div className="text-center mb-8">
+                            <div className="flex items-center justify-center mb-4">
+                                <div className="flex space-x-1">
+                                    <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"></div>
+                                    <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"></div>
+                                    <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"></div>
+                                </div>
+                            </div>
+                            <h2 className={`text-2xl font-bold ${theme.text} mb-2`}>Perfect Match!</h2>
+                            <p className={`${theme.textSecondary}`}>Based on your answers, we recommend:</p>
+                        </div>
+
+                        <div className={`${theme.cardBg} backdrop-blur-sm p-6 rounded-2xl border ${theme.border} mb-6 relative overflow-hidden`}>
+                            <div className={`absolute inset-0 bg-gradient-to-r ${recommendedCompanion.colors.gradient} opacity-10`} />
+                            <div className="relative text-center">
+                                <div className="text-5xl mb-3">{recommendedCompanion.emoji}</div>
+                                <h3 className={`text-2xl font-bold ${theme.text} mb-1`}>{recommendedCompanion.name}</h3>
+                                <p className={`${theme.textSecondary} mb-3`}>{recommendedCompanion.tagline}</p>
+                                <p className={`text-sm ${theme.textSecondary} mb-4`}>{recommendedCompanion.description}</p>
+                                <p className={`text-xs ${theme.textSecondary}`}>Specializes in: {recommendedCompanion.specialty}</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            <button
+                                onClick={() => {
+                                    setSelectedCompanion(recommended);
+                                    setUser({ email: 'matched-user', isPlus: false, isPro: false });
+                                    setCurrentScreen('chat');
+                                }}
+                                className={`w-full bg-gradient-to-r ${recommendedCompanion.colors.gradient} text-white p-4 rounded-xl font-medium hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200`}
+                            >
+                                Start Chatting with {recommendedCompanion.name}
+                            </button>
+                            
+                            <button
+                                onClick={() => {
+                                    setUser({ email: 'matched-user', isPlus: false, isPro: false });
+                                    setCurrentScreen('companion-select');
+                                }}
+                                className={`w-full ${theme.cardBg} ${theme.text} border ${theme.border} p-4 rounded-xl font-medium hover:shadow-md transition-all duration-200`}
+                            >
+                                Browse All Companions
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+    }
+
+    if (currentScreen === 'companion-select') {
         return (
             <div className={`min-h-screen ${theme.bg} p-4`}>
                 <div className="max-w-md mx-auto pt-8">
                     <div className="text-center mb-8">
-                        <h2 className={`text-2xl font-bold ${theme.text} mb-2`}>Choose Your Therapist</h2>
-                        <p className={`${theme.textSecondary}`}>Each has their own unique approach to support you</p>
+                        <h2 className={`text-2xl font-bold ${theme.text} mb-2`}>Choose Your Companion</h2>
+                        <p className={`${theme.textSecondary}`}>Each one has their own personality and way of supporting you</p>
                     </div>
 
                     <div className="space-y-4">
-                        {Object.entries(therapists).map(([key, therapist]) => (
+                        {Object.entries(companions).map(([key, companion]) => (
                             <button
                                 key={key}
                                 onClick={() => {
-                                    setSelectedTherapist(key);
+                                    setSelectedCompanion(key);
                                     setCurrentScreen('chat');
                                 }}
-                                className={`w-full ${theme.cardBg} backdrop-blur-sm p-6 rounded-2xl border ${theme.border} hover:shadow-lg transition-all duration-200 text-left`}
+                                className={`w-full ${theme.cardBg} backdrop-blur-sm p-6 rounded-2xl border ${theme.border} hover:shadow-lg hover:scale-[1.02] transition-all duration-300 text-left group relative overflow-hidden`}
                             >
-                                <div className="flex items-center space-x-4">
-                                    <div className="text-3xl">{therapist.emoji}</div>
+                                <div className={`absolute inset-0 bg-gradient-to-r ${companion.colors.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-300`} />
+                                <div className="relative flex items-center space-x-4">
+                                    <div className={`text-3xl bg-gradient-to-r ${companion.colors.gradient} bg-clip-text text-transparent`}>
+                                        {companion.emoji}
+                                    </div>
                                     <div className="flex-1">
-                                        <h3 className={`text-lg font-semibold ${theme.text}`}>{therapist.name}</h3>
-                                        <p className={`text-sm ${theme.textSecondary}`}>{therapist.description}</p>
+                                        <div className="flex items-center space-x-2 mb-1">
+                                            <h3 className={`text-lg font-semibold ${theme.text}`}>{companion.name}</h3>
+                                            <span className={`text-xs px-2 py-1 rounded-full bg-gradient-to-r ${companion.colors.gradient} text-white`}>
+                                                {companion.tagline}
+                                            </span>
+                                        </div>
+                                        <p className={`text-sm ${theme.textSecondary} mb-2`}>{companion.description}</p>
+                                        <p className={`text-xs ${theme.textSecondary} opacity-75`}>Specializes in: {companion.specialty}</p>
                                     </div>
                                 </div>
                             </button>
@@ -292,13 +729,13 @@ const App = () => {
         <nav className={`${theme.cardBg} backdrop-blur-sm border-b ${theme.border} p-4`}>
             <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-teal to-gold rounded-full flex items-center justify-center">
-                        <span className="text-white text-lg">{therapists[selectedTherapist].emoji}</span>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${companions[selectedCompanion]?.colors.accentGradient || theme.accentGradient} shadow-lg`}>
+                        <span className="text-white text-lg">{companions[selectedCompanion]?.emoji}</span>
                     </div>
                     <div>
-                        <h1 className={`text-lg font-bold ${theme.text}`}>{therapists[selectedTherapist].name}</h1>
+                        <h1 className={`text-lg font-bold ${theme.text}`}>{companions[selectedCompanion]?.name}</h1>
                         <p className={`text-xs ${theme.textSecondary}`}>
-                            {isPro ? 'Pro' : isPlus ? 'Plus' : `${dailyMessageCount}/${FREE_DAILY_LIMIT} daily messages`}
+                            {isPro ? 'Best Friend' : isPlus ? 'Friend' : `${dailyMessageCount}/${FREE_DAILY_LIMIT} daily chats`}
                         </p>
                     </div>
                 </div>
@@ -325,7 +762,7 @@ const App = () => {
                         disabled={!isPro}
                     >
                         <BookOpen className={`w-5 h-5 ${theme.text}`} />
-                        <span className={theme.text}>Journal {!isPro && '(Pro)'}</span>
+                        <span className={theme.text}>Journal {!isPro && '(Best Friend)'}</span>
                     </button>
                     <button
                         onClick={() => { setCurrentScreen('settings'); setShowMobileMenu(false); }}
@@ -340,7 +777,7 @@ const App = () => {
                             className="w-full text-left p-3 rounded-lg bg-gradient-to-r from-teal to-gold text-white transition-colors flex items-center space-x-3"
                         >
                             <Crown className="w-5 h-5" />
-                            <span>Upgrade to Plus or Pro</span>
+                            <span>Upgrade to Friend or Best Friend</span>
                         </button>
                     )}
                 </div>
@@ -357,33 +794,43 @@ const App = () => {
                         <div className="w-16 h-16 bg-gradient-to-r from-teal to-gold rounded-full flex items-center justify-center mx-auto mb-4">
                             <Crown className="text-white w-8 h-8" />
                         </div>
-                        <h2 className={`text-2xl font-bold ${theme.text} mb-2`}>Unlock More with Plus & Pro</h2>
-                        <p className={`${theme.textSecondary}`}>Get unlimited access and more powerful features</p>
+                        <h2 className={`text-2xl font-bold ${theme.text} mb-2`}>Become Better Friends</h2>
+                        <p className={`${theme.textSecondary}`}>Unlock unlimited conversations and premium features</p>
                     </div>
 
                     <div className="space-y-4">
                         <button
-                            onClick={() => handleUpgrade('plus')}
-                            className={`${theme.cardBg} backdrop-blur-sm p-6 rounded-2xl border ${theme.border} hover:shadow-lg transition-all duration-200 text-left w-full`}
+                            onClick={() => handleUpgrade('friend')}
+                            className={`${theme.cardBg} backdrop-blur-sm p-6 rounded-2xl border ${theme.border} hover:shadow-lg hover:scale-[1.02] transition-all duration-300 text-left w-full group relative overflow-hidden`}
                         >
+                            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
+                            <div className="relative">
                             <div className="flex items-center space-x-4 mb-2">
-                                <Zap className={`w-8 h-8 text-teal`} />
-                                <h3 className={`text-xl font-bold ${theme.text}`}>Plus - $9.99/mo</h3>
+                                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                                        <Heart className="w-5 h-5 text-white" />
+                                    </div>
+                                    <h3 className={`text-xl font-bold ${theme.text}`}>Friend - $4.99/mo</h3>
+                                </div>
+                                <p className={`${theme.textSecondary} mb-4`}>Unlimited chats with all companions, voice messages, and conversation history.</p>
+                                <span className="bg-blue-500/20 text-blue-600 text-xs font-semibold px-3 py-1 rounded-full">Perfect for Daily Support</span>
                             </div>
-                            <p className={`${theme.textSecondary} mb-4`}>Unlimited messages with GPT-3.5-turbo, chat history, and dark mode.</p>
-                            <span className="bg-teal/20 text-teal text-xs font-semibold px-2 py-1 rounded-full">Great Value</span>
                         </button>
 
                         <button
-                            onClick={() => handleUpgrade('pro')}
-                            className={`${theme.cardBg} backdrop-blur-sm p-6 rounded-2xl border ${theme.border} hover:shadow-lg transition-all duration-200 text-left w-full`}
+                            onClick={() => handleUpgrade('bestfriend')}
+                            className={`${theme.cardBg} backdrop-blur-sm p-6 rounded-2xl border ${theme.border} hover:shadow-lg hover:scale-[1.02] transition-all duration-300 text-left w-full group relative overflow-hidden`}
                         >
+                            <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
+                            <div className="relative">
                             <div className="flex items-center space-x-4 mb-2">
-                                <Sparkles className={`w-8 h-8 text-gold`} />
-                                <h3 className={`text-xl font-bold ${theme.text}`}>Pro - $19.99/mo</h3>
+                                    <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                                        <Sparkles className="w-5 h-5 text-white" />
+                                    </div>
+                                    <h3 className={`text-xl font-bold ${theme.text}`}>Best Friend - $9.99/mo</h3>
+                                </div>
+                                <p className={`${theme.textSecondary} mb-4`}>Everything in Friend, plus advanced AI (GPT-4), insights, journaling, and priority features.</p>
+                                <span className="bg-purple-500/20 text-purple-600 text-xs font-semibold px-3 py-1 rounded-full">Most Advanced</span>
                             </div>
-                            <p className={`${theme.textSecondary} mb-4`}>Everything in Plus, plus access to GPT-4-turbo, multiple AIs, and journaling.</p>
-                            <span className="bg-gold/20 text-gold text-xs font-semibold px-2 py-1 rounded-full">Most Powerful</span>
                         </button>
                     </div>
 
@@ -392,7 +839,7 @@ const App = () => {
                             onClick={() => setCurrentScreen('chat')}
                             className={`w-full ${theme.cardBg} ${theme.text} border ${theme.border} p-4 rounded-xl font-medium hover:shadow-md transition-all duration-200`}
                         >
-                            Continue with Free
+                            Continue with Free Tier
                         </button>
                     </div>
                 </div>
@@ -439,7 +886,7 @@ const App = () => {
                 <div className="max-w-2xl mx-auto p-4">
                     <div className="mb-6">
                         <h2 className={`text-2xl font-bold ${theme.text} mb-2`}>Settings</h2>
-                        <p className={`${theme.textSecondary}`}>Customize your experience</p>
+                        <p className={`${theme.textSecondary}`}>Personalize your companion experience</p>
                     </div>
 
                     <div className="space-y-4">
@@ -459,23 +906,26 @@ const App = () => {
                         </div>
 
                         <div className={`${theme.cardBg} backdrop-blur-sm p-6 rounded-2xl border ${theme.border}`}>
-                            <h3 className={`font-medium ${theme.text} mb-4`}>Choose Your Therapist</h3>
+                            <h3 className={`font-medium ${theme.text} mb-4`}>Switch Companion</h3>
                             <div className="space-y-3">
-                                {Object.entries(therapists).map(([key, therapist]) => (
+                                {Object.entries(companions).map(([key, companion]) => (
                                     <button
                                         key={key}
-                                        onClick={() => setSelectedTherapist(key)}
+                                        onClick={() => setSelectedCompanion(key)}
                                         className={`w-full p-3 rounded-lg border transition-all duration-200 flex items-center space-x-3 ${
-                                            selectedTherapist === key
-                                                ? 'border-teal bg-teal/50'
+                                            selectedCompanion === key
+                                                ? `border-2 bg-gradient-to-r ${companion.colors.gradient} bg-opacity-20 border-opacity-50`
                                                 : `border-gray-200 hover:${theme.cardBg}`
                                         }`}
                                     >
-                                        <span className="text-2xl">{therapist.emoji}</span>
-                                        <div className="text-left">
-                                            <div className={`font-medium ${theme.text}`}>{therapist.name}</div>
-                                            <div className={`text-sm ${theme.textSecondary}`}>{therapist.description}</div>
+                                        <span className="text-2xl">{companion.emoji}</span>
+                                        <div className="text-left flex-1">
+                                            <div className={`font-medium ${theme.text}`}>{companion.name}</div>
+                                            <div className={`text-sm ${theme.textSecondary}`}>{companion.tagline}</div>
                                         </div>
+                                        {selectedCompanion === key && (
+                                            <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${companion.colors.gradient}`} />
+                                        )}
                                     </button>
                                 ))}
                             </div>
@@ -505,12 +955,39 @@ const App = () => {
             <div className="flex-1 max-w-2xl mx-auto w-full p-4 overflow-y-auto" ref={chatContainerRef}>
                 <div className="space-y-4">
                     {!chatHistory.length && (
-                        <div className="text-center py-8">
-                            <div className={`${theme.cardBg} backdrop-blur-sm rounded-2xl p-6 shadow-sm border ${theme.border} max-w-md mx-auto`}>
-                                <div className="text-4xl mb-3">{therapists[selectedTherapist].emoji}</div>
-                                <p className={`${theme.text} mb-2`}>Hi! I'm {therapists[selectedTherapist].name}</p>
-                                <p className={`${theme.textSecondary} text-sm`}>{therapists[selectedTherapist].description}</p>
-                                <p className={`${theme.textSecondary} text-sm mt-2`}>I'm here to listen and support you. What's on your mind?</p>
+                        <div className="space-y-6 py-8">
+                            {/* Companion Introduction */}
+                            <div className="text-center">
+                                <div className={`${theme.cardBg} backdrop-blur-sm rounded-2xl p-6 shadow-lg border ${theme.border} max-w-md mx-auto relative overflow-hidden`}>
+                                    <div className={`absolute inset-0 bg-gradient-to-r ${companions[selectedCompanion]?.colors.gradient} opacity-5`} />
+                                    <div className="relative">
+                                        <div className="text-4xl mb-3">{companions[selectedCompanion]?.emoji}</div>
+                                        <h3 className={`text-xl font-bold ${theme.text} mb-1`}>Hi! I'm {companions[selectedCompanion]?.name}</h3>
+                                        <p className={`${theme.textSecondary} text-sm mb-2`}>{companions[selectedCompanion]?.tagline}</p>
+                                        <p className={`${theme.textSecondary} text-sm`}>{companions[selectedCompanion]?.description}</p>
+                                        <p className={`${theme.text} text-sm mt-3 font-medium`}>{getContextualStarter()}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Quick Conversation Starters */}
+                            <div className="max-w-md mx-auto">
+                                <p className={`text-center ${theme.textSecondary} text-sm mb-4`}>or tap one of these to get started:</p>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {quickReplies.slice(0, 6).map((reply, index) => (
+                                        <button
+                                            key={index}
+                                            onClick={() => {
+                                                setMessage(reply);
+                                                setTimeout(() => handleSendMessage(), 100);
+                                            }}
+                                            className={`${theme.cardBg} backdrop-blur-sm p-3 rounded-xl border ${theme.border} hover:shadow-md hover:scale-[1.02] transition-all duration-200 text-sm ${theme.text} text-left group relative overflow-hidden`}
+                                        >
+                                            <div className={`absolute inset-0 bg-gradient-to-r ${companions[selectedCompanion]?.colors.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-200`} />
+                                            <div className="relative">{reply}</div>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     )}
@@ -523,7 +1000,7 @@ const App = () => {
                             <div
                                 className={`max-w-[85%] p-4 rounded-2xl shadow-sm ${
                                     msg.role === 'user'
-                                        ? 'bg-gradient-to-r from-teal to-gold text-white rounded-br-md'
+                                        ? `bg-gradient-to-r ${companions[selectedCompanion]?.colors.gradient || 'from-blue-500 to-purple-500'} text-white rounded-br-md`
                                         : `${theme.cardBg} backdrop-blur-sm ${theme.text} border ${theme.border} rounded-bl-md`
                                 }`}
                             >
@@ -539,11 +1016,11 @@ const App = () => {
                         <div className="flex justify-start">
                             <div className={`${theme.cardBg} backdrop-blur-sm border ${theme.border} rounded-2xl rounded-bl-md p-4 shadow-sm`}>
                                 <div className="flex items-center space-x-2">
-                                    <span className="text-2xl">{therapists[selectedTherapist].emoji}</span>
+                                    <span className="text-2xl">{companions[selectedCompanion]?.emoji}</span>
                                     <div className="flex space-x-1">
-                                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                                        <div className={`w-2 h-2 rounded-full animate-bounce bg-gradient-to-r ${companions[selectedCompanion]?.colors.gradient}`}></div>
+                                        <div className={`w-2 h-2 rounded-full animate-bounce bg-gradient-to-r ${companions[selectedCompanion]?.colors.gradient}`} style={{animationDelay: '0.1s'}}></div>
+                                        <div className={`w-2 h-2 rounded-full animate-bounce bg-gradient-to-r ${companions[selectedCompanion]?.colors.gradient}`} style={{animationDelay: '0.2s'}}></div>
                                     </div>
                                 </div>
                             </div>
@@ -572,12 +1049,64 @@ const App = () => {
                     <button
                         onClick={handleSendMessage}
                         disabled={!message.trim() || isTyping}
-                        className="bg-gradient-to-r from-teal to-gold text-white p-4 rounded-2xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:transform-none disabled:shadow-none"
+                        className={`${companions[selectedCompanion]?.colors.accentGradient || theme.accentGradient} text-white p-4 rounded-2xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:transform-none disabled:shadow-none`}
                     >
                         <Send className="w-5 h-5" />
                     </button>
                 </div>
             </div>
+
+            {/* Crisis Support Modal */}
+            {showCrisisSupport && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className={`${theme.cardBg} backdrop-blur-sm rounded-2xl p-6 max-w-md w-full border ${theme.border} shadow-2xl`}>
+                        <div className="text-center mb-6">
+                            <div className="w-16 h-16 bg-gradient-to-r from-red-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Heart className="text-white w-8 h-8" />
+                            </div>
+                            <h3 className={`text-xl font-bold ${theme.text} mb-2`}>{crisisResources.title}</h3>
+                            <p className={`${theme.textSecondary} text-sm`}>{crisisResources.message}</p>
+                        </div>
+
+                        <div className="space-y-4 mb-6">
+                            {crisisResources.resources.map((resource, index) => (
+                                <div key={index} className={`p-4 rounded-xl border ${theme.border} ${theme.cardBg}`}>
+                                    <h4 className={`font-semibold ${theme.text} mb-1`}>{resource.name}</h4>
+                                    {resource.number && (
+                                        <p className="text-lg font-bold text-red-600 mb-1">{resource.number}</p>
+                                    )}
+                                    {resource.link && (
+                                        <a 
+                                            href={resource.link} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="text-blue-600 hover:text-blue-800 underline text-sm"
+                                        >
+                                            Visit Website
+                                        </a>
+                                    )}
+                                    <p className={`text-xs ${theme.textSecondary}`}>{resource.description}</p>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="space-y-3">
+                            <button
+                                onClick={() => window.open('tel:988')}
+                                className="w-full bg-gradient-to-r from-red-500 to-pink-500 text-white p-4 rounded-xl font-medium hover:shadow-lg transition-all duration-200"
+                            >
+                                Call 988 Now
+                            </button>
+                            <button
+                                onClick={() => setShowCrisisSupport(false)}
+                                className={`w-full ${theme.cardBg} ${theme.text} border ${theme.border} p-3 rounded-xl font-medium hover:shadow-md transition-all duration-200`}
+                            >
+                                Continue Conversation
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
