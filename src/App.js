@@ -17,13 +17,15 @@ import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithP
 import { createTheme, models, subscriptionTiers } from './utils/theme';
 import LandingPage from './components/LandingPage';
 import ChatInterface from './components/ChatInterface';
+import EnhancedChatInterface from './components/EnhancedChatInterface';
+import HomeDashboard from './components/HomeDashboard';
 import Journal from './components/Journal';
 import UpgradeScreen from './components/UpgradeScreen';
 
 const App = () => {
   // Core State
   const [user, setUser] = useState(null);
-  const [currentScreen, setCurrentScreen] = useState('landing'); // landing, auth, chat, journal, upgrade
+  const [currentScreen, setCurrentScreen] = useState('landing'); // landing, auth, home, chat, journal, upgrade
   const [chatHistory, setChatHistory] = useState([]);
   const [message, setMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -56,7 +58,7 @@ const App = () => {
       
       const cred = await authFunction(auth, email, password);
       setUser({ email: cred.user.email });
-      setCurrentScreen('chat');
+      setCurrentScreen('home');
       setEmail('');
       setPassword('');
     } catch (error) {
@@ -68,7 +70,7 @@ const App = () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       setUser({ email: result.user.email });
-      setCurrentScreen('chat');
+      setCurrentScreen('home');
     } catch (error) {
       console.error('Google auth error:', error.message);
     }
@@ -158,7 +160,7 @@ const App = () => {
         onGetStarted={() => setCurrentScreen('auth')}
         onGuestAccess={() => {
           setUser({ email: 'guest' });
-          setCurrentScreen('chat');
+          setCurrentScreen('home');
         }}
         theme={theme}
       />
@@ -265,12 +267,33 @@ const App = () => {
     );
   }
 
+  // Home Dashboard
+  if (currentScreen === 'home') {
+    return (
+      <HomeDashboard
+        theme={theme}
+        user={user}
+        onStartChat={(prompt = '') => {
+          if (prompt) setMessage(prompt);
+          setCurrentScreen('chat');
+        }}
+        onOpenJournal={() => setCurrentScreen('journal')}
+        onOpenUpgrade={() => setCurrentScreen('upgrade')}
+        userTier={userTier}
+        dailyMessageCount={dailyMessageCount}
+        chatHistory={chatHistory}
+        selectedModel={selectedModel}
+        models={models}
+      />
+    );
+  }
+
   // Journal Screen
   if (currentScreen === 'journal') {
     return (
       <Journal
         theme={theme}
-        onBack={() => setCurrentScreen('chat')}
+        onBack={() => setCurrentScreen('home')}
         userTier={userTier}
       />
     );
@@ -281,7 +304,7 @@ const App = () => {
     return (
       <UpgradeScreen
         theme={theme}
-        onBack={() => setCurrentScreen('chat')}
+        onBack={() => setCurrentScreen('home')}
         currentTier={userTier}
       />
     );
@@ -291,7 +314,7 @@ const App = () => {
   if (currentScreen === 'chat') {
     return (
       <>
-        <ChatInterface
+        <EnhancedChatInterface
           chatHistory={chatHistory}
           message={message}
           setMessage={setMessage}
@@ -339,6 +362,17 @@ const App = () => {
 
                   {/* Navigation */}
                   <div className="space-y-3">
+                    <button
+                      onClick={() => {
+                        setCurrentScreen('home');
+                        setShowMobileMenu(false);
+                      }}
+                      className="w-full text-left p-4 md:p-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex items-center space-x-3"
+                    >
+                      <Sparkles className="w-6 h-6 md:w-5 md:h-5" />
+                      <span className="text-base md:text-sm">Home</span>
+                    </button>
+
                     <button
                       onClick={() => {
                         setCurrentScreen('journal');
