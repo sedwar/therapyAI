@@ -195,7 +195,12 @@ const HomeDashboard = ({
             {quickActions.map((action, index) => (
               <motion.button
                 key={index}
-                onClick={() => onStartChat(action.prompt)}
+                onClick={() => {
+                  console.log('Quick action clicked:', action.prompt);
+                  if (onStartChat) {
+                    onStartChat(action.prompt);
+                  }
+                }}
                 className={`p-6 rounded-3xl bg-gradient-to-r ${action.color} text-white hover:shadow-xl transition-all relative overflow-hidden group`}
                 whileHover={{ scale: 1.05, y: -5 }}
                 whileTap={{ scale: 0.95 }}
@@ -220,7 +225,12 @@ const HomeDashboard = ({
             <div className="flex items-center justify-between mb-6">
               <h2 className={`text-2xl font-light ${theme.colors.text}`}>Recent Conversations</h2>
               <motion.button
-                onClick={onStartChat}
+                onClick={() => {
+                  console.log('Start New clicked');
+                  if (onStartChat) {
+                    onStartChat('');
+                  }
+                }}
                 className={`flex items-center space-x-2 ${theme.colors.textSecondary} hover:${theme.colors.text} transition-colors`}
                 whileHover={{ x: 5 }}
               >
@@ -229,54 +239,30 @@ const HomeDashboard = ({
               </motion.button>
             </div>
             
-            <div className="space-y-4">
-              {recentTopics.map((topic, index) => (
-                <motion.div
-                  key={index}
-                  className={`${theme.colors.card} border rounded-2xl p-4 hover:${theme.shadows.glow} transition-all cursor-pointer group`}
-                  whileHover={{ scale: 1.02 }}
-                  onClick={() => onStartChat(`Continue our conversation about ${topic.title}`)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h3 className={`font-medium ${theme.colors.text} mb-1 group-hover:text-cyan-500 transition-colors`}>
-                        {topic.title}
-                      </h3>
-                      <div className="flex items-center space-x-4">
-                        <span className={`text-sm ${theme.colors.textSecondary}`}>
-                          {topic.messages} messages
-                        </span>
-                        <span className={`text-sm ${theme.colors.textSecondary}`}>
-                          {topic.time}
-                        </span>
-                      </div>
-                    </div>
-                    <ChevronRight className={`w-5 h-5 ${theme.colors.textSecondary} group-hover:text-cyan-500 transition-colors`} />
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-
-            {chatHistory.length === 0 && (
-              <motion.div
-                className={`${theme.colors.card} border rounded-2xl p-8 text-center`}
-                variants={itemVariants}
+            {/* Simplified - just show the welcome card */}
+            <motion.div
+              className={`${theme.colors.card} border rounded-2xl p-8 text-center`}
+              variants={itemVariants}
+            >
+              <MessageCircle className={`w-12 h-12 ${theme.colors.textSecondary} mx-auto mb-4`} />
+              <h3 className={`font-medium ${theme.colors.text} mb-2`}>Ready to chat?</h3>
+              <p className={`${theme.colors.textSecondary} mb-4`}>
+                Start a conversation with {models[selectedModel]?.name || 'your AI companion'}
+              </p>
+              <motion.button
+                onClick={() => {
+                  console.log('Start Chatting clicked');
+                  if (onStartChat) {
+                    onStartChat('');
+                  }
+                }}
+                className="bg-gradient-to-r from-cyan-500 to-teal-500 text-white px-6 py-3 rounded-xl font-medium hover:shadow-lg transition-all"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <MessageCircle className={`w-12 h-12 ${theme.colors.textSecondary} mx-auto mb-4`} />
-                <h3 className={`font-medium ${theme.colors.text} mb-2`}>No conversations yet</h3>
-                <p className={`${theme.colors.textSecondary} mb-4`}>
-                  Start your first conversation with {models[selectedModel]?.name}
-                </p>
-                <motion.button
-                  onClick={onStartChat}
-                  className="bg-gradient-to-r from-cyan-500 to-teal-500 text-white px-6 py-3 rounded-xl font-medium hover:shadow-lg transition-all"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  Start Chatting
-                </motion.button>
-              </motion.div>
-            )}
+                Start Chatting
+              </motion.button>
+            </motion.div>
           </motion.div>
 
           {/* Sidebar */}

@@ -14,10 +14,9 @@ import {
 } from 'lucide-react';
 import { auth, googleProvider } from './firebaseConfig';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
-import { createTheme, models, subscriptionTiers } from './utils/theme';
+import { createTheme, models, subscriptionTiers } from './utils/designSystem';
 import LandingPage from './components/LandingPage';
 import ChatInterface from './components/ChatInterface';
-import EnhancedChatInterface from './components/EnhancedChatInterface';
 import HomeDashboard from './components/HomeDashboard';
 import Journal from './components/Journal';
 import UpgradeScreen from './components/UpgradeScreen';
@@ -274,8 +273,15 @@ const App = () => {
         theme={theme}
         user={user}
         onStartChat={(prompt = '') => {
-          if (prompt) setMessage(prompt);
-          setCurrentScreen('chat');
+          console.log('onStartChat called with prompt:', prompt);
+          try {
+            if (prompt && prompt.trim()) {
+              setMessage(prompt.trim());
+            }
+            setCurrentScreen('chat');
+          } catch (error) {
+            console.error('Error in onStartChat:', error);
+          }
         }}
         onOpenJournal={() => setCurrentScreen('journal')}
         onOpenUpgrade={() => setCurrentScreen('upgrade')}
@@ -314,7 +320,7 @@ const App = () => {
   if (currentScreen === 'chat') {
     return (
       <>
-        <EnhancedChatInterface
+        <ChatInterface
           chatHistory={chatHistory}
           message={message}
           setMessage={setMessage}

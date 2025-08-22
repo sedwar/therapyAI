@@ -1,4 +1,7 @@
-// Revolutionary Design System for AURA AI
+// AURA AI - Complete Design System
+// Consolidated theme system for the revolutionary ChatGPT wrapper
+
+// Base theme system for app-wide styling
 export const createTheme = (isDarkMode) => ({
   colors: {
     // Backgrounds - Sophisticated gradients
@@ -58,7 +61,7 @@ export const createTheme = (isDarkMode) => ({
   }
 });
 
-// AI Model configurations with sophisticated color schemes
+// AI Model configurations with sophisticated personas
 export const models = {
   aura: {
     name: 'Aura',
@@ -157,5 +160,132 @@ export const subscriptionTiers = {
       'White-glove support'
     ],
     limit: null
+  }
+};
+
+// Enhanced Chat Features (for future implementation)
+export const conversationThemes = {
+  minimal: {
+    name: 'Minimal',
+    emoji: '⚪',
+    description: 'Clean and focused',
+    colors: {
+      primary: 'from-slate-600 via-gray-600 to-slate-700',
+      secondary: 'from-slate-500 to-gray-600',
+      accent: 'from-slate-400 to-gray-500',
+      text: 'text-slate-100',
+      textSecondary: 'text-slate-300',
+      background: 'bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800',
+      card: 'bg-slate-800/50 backdrop-blur-xl border-slate-500/20',
+      userBubble: 'bg-gradient-to-r from-slate-500 to-gray-500',
+      aiBubble: 'bg-gradient-to-r from-slate-600/80 to-gray-600/80 backdrop-blur-xl',
+      glow: 'shadow-slate-500/20',
+      particles: ['💭', '✨', '💫', '⭐', '🤍']
+    },
+    animation: {
+      background: 'animate-none',
+      particles: false
+    }
+  },
+  cosmic: {
+    name: 'Cosmic',
+    emoji: '🌌',
+    description: 'Journey through the stars',
+    colors: {
+      primary: 'from-purple-600 via-blue-600 to-indigo-900',
+      secondary: 'from-purple-500 to-blue-600',
+      accent: 'from-cyan-400 to-purple-500',
+      text: 'text-purple-100',
+      textSecondary: 'text-purple-300',
+      background: 'bg-gradient-to-br from-indigo-900 via-purple-900 to-black',
+      card: 'bg-purple-900/30 backdrop-blur-xl border-purple-500/20',
+      userBubble: 'bg-gradient-to-r from-purple-500 to-pink-500',
+      aiBubble: 'bg-gradient-to-r from-indigo-500/80 to-purple-500/80 backdrop-blur-xl',
+      glow: 'shadow-purple-500/30',
+      particles: ['⭐', '✨', '🌟', '💫', '🪐']
+    },
+    animation: {
+      background: 'animate-pulse',
+      particles: true
+    }
+  },
+  ocean: {
+    name: 'Ocean',
+    emoji: '🌊',
+    description: 'Dive into tranquil depths',
+    colors: {
+      primary: 'from-blue-600 via-cyan-600 to-teal-700',
+      secondary: 'from-blue-500 to-cyan-600',
+      accent: 'from-cyan-400 to-teal-500',
+      text: 'text-cyan-100',
+      textSecondary: 'text-cyan-300',
+      background: 'bg-gradient-to-br from-blue-900 via-cyan-900 to-teal-800',
+      card: 'bg-cyan-900/30 backdrop-blur-xl border-cyan-500/20',
+      userBubble: 'bg-gradient-to-r from-cyan-500 to-teal-500',
+      aiBubble: 'bg-gradient-to-r from-blue-500/80 to-cyan-500/80 backdrop-blur-xl',
+      glow: 'shadow-cyan-500/30',
+      particles: ['🐠', '🫧', '🌊', '🐚', '🦋']
+    },
+    animation: {
+      background: 'animate-pulse',
+      particles: true
+    }
+  }
+};
+
+// Message reaction system (for future implementation)
+export const messageReactions = {
+  love: { emoji: '❤️', label: 'Love it', color: 'text-red-500' },
+  wow: { emoji: '🤯', label: 'Mind blown', color: 'text-yellow-500' },
+  smart: { emoji: '🧠', label: 'So smart', color: 'text-blue-500' },
+  helpful: { emoji: '💡', label: 'Super helpful', color: 'text-orange-500' },
+  confused: { emoji: '🤔', label: 'Confused', color: 'text-purple-500' }
+};
+
+// Smart suggestion categories (for future implementation)
+export const suggestionCategories = {
+  creative: {
+    name: 'Creative',
+    emoji: '🎨',
+    color: 'from-pink-500 to-purple-500',
+    prompts: [
+      'Help me brainstorm ideas for...',
+      'Write a creative story about...',
+      'Design a concept for...',
+      'Come up with unique solutions for...'
+    ]
+  },
+  work: {
+    name: 'Work',
+    emoji: '💼',
+    color: 'from-blue-500 to-cyan-500',
+    prompts: [
+      'Help me plan my day...',
+      'Draft an email about...',
+      'Analyze this problem...',
+      'Create a strategy for...'
+    ]
+  },
+  learning: {
+    name: 'Learning',
+    emoji: '📚',
+    color: 'from-green-500 to-emerald-500',
+    prompts: [
+      'Explain this concept...',
+      'Teach me about...',
+      'Help me understand...',
+      'Break down this topic...'
+    ]
+  },
+  fun: {
+    name: 'Fun',
+    emoji: '🎉',
+    color: 'from-yellow-500 to-orange-500',
+    prompts: [
+      'Let\'s play a game...',
+      'Tell me something interesting about...',
+      'What would happen if...',
+      'Create a fun challenge for...'
+    ]
   }
 };
