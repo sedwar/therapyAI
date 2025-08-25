@@ -1,22 +1,25 @@
-// AURA AI - Revolutionary ChatGPT Wrapper
+// AURA AI - Million Dollar ChatGPT Wrapper
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Send, 
   Sparkles,
-  Menu, 
   X, 
-  Moon, 
-  Sun,
   LogOut,
-  Settings,
   Heart
 } from 'lucide-react';
 import { auth, googleProvider } from './firebaseConfig';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
-import { createTheme, models, subscriptionTiers } from './utils/designSystem';
-import LandingPage from './components/LandingPage';
-import ChatInterface from './components/ChatInterface';
+import { createPremiumTheme, premiumModels, premiumSubscriptions, getTimeOfDay, detectUserMood } from './utils/premiumDesignSystem';
+import { 
+  detectEmotionalContext, 
+  classifyConversationTopic, 
+  generateContextualResponse,
+  saveConversationWithIntelligence,
+  detectConversationTopic,
+  generateConversationTitle
+} from './utils/conversationIntelligence';
+import PremiumLandingPage from './components/PremiumLandingPage';
+import PremiumChatInterface from './components/PremiumChatInterface';
 import HomeDashboard from './components/HomeDashboard';
 import Journal from './components/Journal';
 import UpgradeScreen from './components/UpgradeScreen';
@@ -32,7 +35,7 @@ const App = () => {
   const [selectedModel, setSelectedModel] = useState('aura');
   
   // Premium State
-  const [userTier, setUserTier] = useState('free'); // free, premium, pro
+  const [userTier] = useState('explorer'); // explorer, visionary, genius - setUserTier for future subscription upgrades
   const [dailyMessageCount, setDailyMessageCount] = useState(0);
   
   // Auth State
@@ -45,8 +48,10 @@ const App = () => {
 
   const messagesEndRef = useRef(null);
   
-  // Theme system
-  const theme = createTheme(isDarkMode);
+  // Premium Theme system with time and mood awareness
+  const timeOfDay = getTimeOfDay();
+  const userMood = detectUserMood(chatHistory);
+  const theme = createPremiumTheme(isDarkMode, timeOfDay, userMood);
   
   // Auth Functions
   const handleEmailAuth = async () => {
@@ -91,7 +96,7 @@ const App = () => {
     if (!message.trim()) return;
     
     // Check subscription limits
-    const currentTier = subscriptionTiers[userTier];
+    const currentTier = premiumSubscriptions[userTier];
     if (currentTier.limit && dailyMessageCount >= currentTier.limit) {
       // Show upgrade prompt
       setCurrentScreen('upgrade');
@@ -99,7 +104,7 @@ const App = () => {
     }
     
     // Check if model requires premium
-    const selectedModelData = models[selectedModel];
+    const selectedModelData = premiumModels[selectedModel];
     if (selectedModelData.tier === 'premium' && userTier === 'free') {
       // Switch to free model or show upgrade
       setSelectedModel('aura');
@@ -110,7 +115,8 @@ const App = () => {
       role: 'user',
       content: message.trim(),
       timestamp: new Date(),
-      model: selectedModel
+      model: selectedModel,
+      id: Date.now() + Math.random()
     };
     
     setChatHistory(prev => [...prev, userMessage]);
@@ -118,26 +124,68 @@ const App = () => {
     setIsTyping(true);
     
     // Increment message count for free users
-    if (userTier === 'free') {
+    if (userTier === 'explorer') {
       setDailyMessageCount(prev => prev + 1);
     }
     
-    // Simulate API call with model-specific responses
+    // Enhanced AI response with conversation intelligence
     setTimeout(() => {
-      const modelData = models[selectedModel];
+      const modelData = premiumModels[selectedModel];
+      
+      // Advanced emotional and topic analysis
+      const emotionalContext = detectEmotionalContext(userMessage.content, chatHistory);
+      const topicClassification = classifyConversationTopic(userMessage.content, chatHistory);
+      
+      const intelligentResponse = generateContextualResponse(
+        userMessage.content, 
+        modelData, 
+        topicClassification.primaryTopic, 
+        emotionalContext.emotion, 
+        chatHistory.slice(-4)
+      );
+      
       const response = {
         role: 'assistant',
-        content: `As ${modelData.name}, I understand you're saying "${userMessage.content}". ${
-          modelData.tier === 'premium' 
-            ? 'Using advanced reasoning capabilities, I can provide deeper insights...' 
-            : 'I\'m here to help you think through this thoughtfully.'
-        }`,
+        content: intelligentResponse.content,
         timestamp: new Date(),
-        model: selectedModel
+        model: selectedModel,
+        topic: topicClassification.primaryTopic,
+        mood: intelligentResponse.tone || 'thoughtful',
+        emotionalTone: emotionalContext.emotion,
+        confidence: emotionalContext.confidence,
+        urgency: emotionalContext.context.urgency,
+        id: Date.now() + Math.random()
       };
-      setChatHistory(prev => [...prev, response]);
+      
+      const finalHistory = [...chatHistory, userMessage, response];
+      setChatHistory(finalHistory);
+      
+      // Save conversation with advanced intelligence
+      saveConversationWithIntelligence(finalHistory, selectedModel, user?.uid || 'guest');
+      
       setIsTyping(false);
     }, selectedModelData.tier === 'premium' ? 2000 : 1500);
+  };
+
+
+
+  // Load conversation history on app start
+  const loadConversationHistory = () => {
+    try {
+      const savedConversation = localStorage.getItem('aura_current_conversation');
+      if (savedConversation) {
+        const conversation = JSON.parse(savedConversation);
+        // Ensure timestamps are proper Date objects
+        const history = (conversation.history || []).map(msg => ({
+          ...msg,
+          timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date()
+        }));
+        setChatHistory(history);
+        setSelectedModel(conversation.model || 'aura');
+      }
+    } catch (error) {
+      console.error('Error loading conversation:', error);
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -152,16 +200,42 @@ const App = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory]);
 
+  // Load conversation history on app start
+  useEffect(() => {
+    loadConversationHistory();
+  }, [user]);
+
+  // Start new conversation
+  const startNewConversation = () => {
+    setChatHistory([]);
+    localStorage.removeItem('aura_current_conversation');
+    localStorage.removeItem('aura_conversations');
+    setCurrentScreen('chat');
+  };
+
+  // Load specific conversation
+  const loadConversation = (conversation) => {
+    // Ensure timestamps are proper Date objects
+    const history = (conversation.history || []).map(msg => ({
+      ...msg,
+      timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date()
+    }));
+    setChatHistory(history);
+    setSelectedModel(conversation.model || 'aura');
+    localStorage.setItem('aura_current_conversation', JSON.stringify(conversation));
+  };
+
   // Landing Page
   if (currentScreen === 'landing') {
     return (
-      <LandingPage
+      <PremiumLandingPage
         onGetStarted={() => setCurrentScreen('auth')}
         onGuestAccess={() => {
-          setUser({ email: 'guest' });
+          setUser({ email: 'guest', uid: 'guest' });
           setCurrentScreen('home');
         }}
-        theme={theme}
+        isDarkMode={isDarkMode}
+        setIsDarkMode={setIsDarkMode}
       />
     );
   }
@@ -269,28 +343,29 @@ const App = () => {
   // Home Dashboard
   if (currentScreen === 'home') {
     return (
-      <HomeDashboard
-        theme={theme}
-        user={user}
-        onStartChat={(prompt = '') => {
-          console.log('onStartChat called with prompt:', prompt);
-          try {
-            if (prompt && prompt.trim()) {
-              setMessage(prompt.trim());
+              <HomeDashboard
+          theme={theme}
+          user={user}
+          onStartChat={(prompt = '') => {
+            console.log('onStartChat called with prompt:', prompt);
+            try {
+              if (prompt && prompt.trim()) {
+                setMessage(prompt.trim());
+              }
+              setCurrentScreen('chat');
+            } catch (error) {
+              console.error('Error in onStartChat:', error);
             }
-            setCurrentScreen('chat');
-          } catch (error) {
-            console.error('Error in onStartChat:', error);
-          }
-        }}
-        onOpenJournal={() => setCurrentScreen('journal')}
-        onOpenUpgrade={() => setCurrentScreen('upgrade')}
-        userTier={userTier}
-        dailyMessageCount={dailyMessageCount}
-        chatHistory={chatHistory}
-        selectedModel={selectedModel}
-        models={models}
-      />
+          }}
+          onLoadConversation={loadConversation}
+          onOpenJournal={() => setCurrentScreen('journal')}
+          onOpenUpgrade={() => setCurrentScreen('upgrade')}
+          userTier={userTier}
+          dailyMessageCount={dailyMessageCount}
+          chatHistory={chatHistory}
+          selectedModel={selectedModel}
+          models={premiumModels}
+        />
     );
   }
 
@@ -320,7 +395,7 @@ const App = () => {
   if (currentScreen === 'chat') {
     return (
       <>
-        <ChatInterface
+        <PremiumChatInterface
           chatHistory={chatHistory}
           message={message}
           setMessage={setMessage}
@@ -328,13 +403,15 @@ const App = () => {
           isTyping={isTyping}
           selectedModel={selectedModel}
           setSelectedModel={setSelectedModel}
-          models={models}
-          theme={theme}
+          models={premiumModels}
           onMenuClick={() => setShowMobileMenu(true)}
           handleKeyPress={handleKeyPress}
           userTier={userTier}
           dailyMessageCount={dailyMessageCount}
-          subscriptionTiers={subscriptionTiers}
+          subscriptionTiers={premiumSubscriptions}
+          startNewConversation={startNewConversation}
+          user={user}
+          isDarkMode={isDarkMode}
         />
 
         {/* Settings Menu */}
@@ -415,14 +492,14 @@ const App = () => {
                     {/* Subscription Status */}
                     <div className="text-center">
                       <div className={`text-sm ${theme.colors.textMuted} mb-1`}>Current Plan</div>
-                      <div className={`font-medium ${theme.colors.text}`}>
-                        {subscriptionTiers[userTier].name}
-                      </div>
-                      {userTier === 'free' && (
-                        <div className={`text-xs ${theme.colors.textMuted} mt-1`}>
-                          {dailyMessageCount}/{subscriptionTiers[userTier].limit} messages today
-                        </div>
-                      )}
+                                                    <div className={`font-medium ${theme.colors.text}`}>
+                                {premiumSubscriptions[userTier].name}
+                              </div>
+                              {userTier === 'free' && (
+                                <div className={`text-xs ${theme.colors.textMuted} mt-1`}>
+                                  {dailyMessageCount}/{premiumSubscriptions[userTier].limit} messages today
+                                </div>
+                              )}
                     </div>
                     
                     {/* Dark Mode Toggle */}

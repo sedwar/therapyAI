@@ -1,6 +1,7 @@
 {
   "short_name": "AURA AI",
-  "name": "AURA AI - Your AI Companion",
+  "name": "AURA AI - Your Intelligent Companion",
+  "description": "Experience emotional support and intelligent conversations with your AI companion. Features conversation memory, emotional intelligence, and personalized responses.",
   "icons": [
     {
       "src": "favicon.ico",
@@ -10,16 +11,23 @@
     {
       "src": "logo192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
       "src": "logo512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
-  "start_url": ".",
+  "start_url": "/",
   "display": "standalone",
-  "theme_color": "#667eea",
-  "background_color": "#f8fafc"
+  "orientation": "portrait-primary",
+  "theme_color": "#06B6D4",
+  "background_color": "#0F172A",
+  "categories": ["lifestyle", "health", "productivity"],
+  "lang": "en-US",
+  "scope": "/",
+  "prefer_related_applications": false
 }

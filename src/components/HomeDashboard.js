@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import '../viral-animations.css';
 import { 
   Sparkles, 
   MessageCircle, 
@@ -18,6 +19,7 @@ import {
   ChevronRight,
   Plus
 } from 'lucide-react';
+import ConversationHistory from './ConversationHistory';
 
 const HomeDashboard = ({ 
   theme, 
@@ -29,7 +31,8 @@ const HomeDashboard = ({
   dailyMessageCount, 
   chatHistory = [],
   selectedModel,
-  models 
+  models,
+  onLoadConversation
 }) => {
   const [timeOfDay, setTimeOfDay] = useState('morning');
   const [streakCount, setStreakCount] = useState(7);
@@ -55,38 +58,40 @@ const HomeDashboard = ({
     setTodaysInsight(insights[Math.floor(Math.random() * insights.length)]);
   }, []);
 
-  const quickActions = [
+  // 🌟 DISCOVERY FEED - Beautiful conversation starters
+  const discoveryFeed = [
     {
-      title: 'Creative Writing',
-      description: 'Spark your imagination',
-      icon: Sparkles,
-      color: 'from-purple-500 to-pink-500',
-      prompt: 'Help me write a creative story about',
-      category: 'creative'
+      title: "What if you could solve any world problem?",
+      description: "Explore global challenges and innovative solutions",
+      gradient: "from-blue-600 via-purple-600 to-indigo-800",
+      emoji: "🌍",
+      prompt: "If I could solve any world problem, I'd focus on",
+      category: "Deep Thoughts",
+      trending: true
     },
     {
-      title: 'Problem Solving',
-      description: 'Work through challenges',
-      icon: Brain,
-      color: 'from-blue-500 to-cyan-500',
-      prompt: 'Help me solve this problem:',
-      category: 'work'
+      title: "Design your dream creative project",
+      description: "Brainstorm something you've always wanted to create",
+      gradient: "from-pink-500 via-rose-500 to-orange-500",
+      emoji: "🎨",
+      prompt: "My dream creative project would be",
+      category: "Creative Labs"
     },
     {
-      title: 'Learn Something',
-      description: 'Expand your knowledge',
-      icon: Target,
-      color: 'from-green-500 to-emerald-500',
-      prompt: 'Teach me about',
-      category: 'learning'
+      title: "What's the most interesting thing you learned recently?",
+      description: "Share knowledge and discover new perspectives",
+      gradient: "from-emerald-500 via-teal-500 to-cyan-600",
+      emoji: "🧠",
+      prompt: "The most interesting thing I learned recently is",
+      category: "Study Buddy"
     },
     {
-      title: 'Just Chat',
-      description: 'Casual conversation',
-      icon: MessageCircle,
-      color: 'from-orange-500 to-yellow-500',
-      prompt: 'I want to chat about',
-      category: 'fun'
+      title: "If you could have dinner with anyone, who would it be?",
+      description: "Explore fascinating conversations across time",
+      gradient: "from-amber-500 via-orange-500 to-red-500",
+      emoji: "🍽️",
+      prompt: "I'd love to have dinner with",
+      category: "Deep Thoughts"
     }
   ];
 
@@ -188,119 +193,127 @@ const HomeDashboard = ({
           </motion.div>
         </motion.div>
 
-        {/* Quick Actions Grid */}
-        <motion.div variants={itemVariants} className="mb-8">
-          <h2 className={`text-2xl font-light ${theme.colors.text} mb-6`}>Quick Start</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            {quickActions.map((action, index) => (
-              <motion.button
+        {/* 🌟 DISCOVERY FEED */}
+        <motion.div variants={itemVariants} className="mb-12">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className={`text-3xl font-bold ${theme.colors.text}`}>Discover</h2>
+            <span className={`text-sm ${theme.colors.textSecondary} bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 px-3 py-1 rounded-full`}>
+              Trending conversations
+            </span>
+          </div>
+          
+          {/* Beautiful scrollable feed */}
+          <div className="space-y-6">
+            {discoveryFeed.map((conversation, index) => (
+              <motion.div
                 key={index}
                 onClick={() => {
-                  console.log('Quick action clicked:', action.prompt);
                   if (onStartChat) {
-                    onStartChat(action.prompt);
+                    onStartChat(conversation.prompt);
                   }
                 }}
-                className={`p-6 rounded-3xl bg-gradient-to-r ${action.color} text-white hover:shadow-xl transition-all relative overflow-hidden group`}
-                whileHover={{ scale: 1.05, y: -5 }}
-                whileTap={{ scale: 0.95 }}
-                variants={itemVariants}
+                className="group cursor-pointer"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ y: -2 }}
               >
-                <div className="relative z-10">
-                  <action.icon className="w-8 h-8 mb-4 mx-auto" />
-                  <h3 className="font-medium text-lg mb-2">{action.title}</h3>
-                  <p className="text-sm opacity-90">{action.description}</p>
+                <div className={`relative rounded-2xl overflow-hidden ${theme.colors.card} border border-gray-200/50 dark:border-gray-700/50 hover:shadow-xl transition-all duration-300`}>
+                  {/* Gradient background */}
+                  <div className={`absolute inset-0 bg-gradient-to-r ${conversation.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-300`} />
+                  
+                  <div className="relative p-8">
+                    <div className="flex items-start space-x-6">
+                      {/* Large emoji/icon */}
+                      <div className={`text-6xl flex-shrink-0 p-4 rounded-2xl bg-gradient-to-r ${conversation.gradient} text-white flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                        {conversation.emoji}
+                      </div>
+                      
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-3 mb-3">
+                          <span className={`text-xs font-medium px-2 py-1 rounded-full bg-gradient-to-r ${conversation.gradient} text-white`}>
+                            {conversation.category}
+                          </span>
+                          {conversation.trending && (
+                            <span className="text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-2 py-1 rounded-full font-medium">
+                              🔥 Trending
+                            </span>
+                          )}
+                        </div>
+                        
+                        <h3 className={`text-2xl font-bold ${theme.colors.text} mb-3 group-hover:bg-gradient-to-r group-hover:${conversation.gradient} group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300`}>
+                          {conversation.title}
+                        </h3>
+                        
+                        <p className={`text-lg ${theme.colors.textSecondary} leading-relaxed`}>
+                          {conversation.description}
+                        </p>
+                        
+                        {/* Call to action */}
+                        <div className="mt-6 flex items-center justify-between">
+                          <span className={`text-sm font-medium ${theme.colors.textSecondary} group-hover:${theme.colors.text} transition-colors`}>
+                            Start conversation →
+                          </span>
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${conversation.gradient}`} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                
-                {/* Hover effect */}
-                <div className="absolute inset-0 bg-white/10 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
-              </motion.button>
+              </motion.div>
             ))}
           </div>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-          {/* Recent Conversations */}
-          <motion.div variants={itemVariants} className="lg:col-span-2">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className={`text-2xl font-light ${theme.colors.text}`}>Recent Conversations</h2>
-              <motion.button
-                onClick={() => {
-                  console.log('Start New clicked');
-                  if (onStartChat) {
-                    onStartChat('');
-                  }
-                }}
-                className={`flex items-center space-x-2 ${theme.colors.textSecondary} hover:${theme.colors.text} transition-colors`}
-                whileHover={{ x: 5 }}
-              >
-                <span>Start New</span>
-                <Plus className="w-4 h-4" />
-              </motion.button>
-            </div>
-            
-            {/* Simplified - just show the welcome card */}
-            <motion.div
-              className={`${theme.colors.card} border rounded-2xl p-8 text-center`}
-              variants={itemVariants}
-            >
-              <MessageCircle className={`w-12 h-12 ${theme.colors.textSecondary} mx-auto mb-4`} />
-              <h3 className={`font-medium ${theme.colors.text} mb-2`}>Ready to chat?</h3>
-              <p className={`${theme.colors.textSecondary} mb-4`}>
-                Start a conversation with {models[selectedModel]?.name || 'your AI companion'}
-              </p>
-              <motion.button
-                onClick={() => {
-                  console.log('Start Chatting clicked');
-                  if (onStartChat) {
-                    onStartChat('');
-                  }
-                }}
-                className="bg-gradient-to-r from-cyan-500 to-teal-500 text-white px-6 py-3 rounded-xl font-medium hover:shadow-lg transition-all"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Start Chatting
-              </motion.button>
-            </motion.div>
-          </motion.div>
+                              {/* Recent Conversations */}
+                    <motion.div variants={itemVariants} className="lg:col-span-2">
+                        <ConversationHistory
+                            theme={theme}
+                            user={user}
+                            onSelectConversation={(conversation) => {
+                                if (onLoadConversation) {
+                                    onLoadConversation(conversation);
+                                }
+                                if (onStartChat) {
+                                    onStartChat('');
+                                }
+                            }}
+                            onStartNew={() => {
+                                if (onStartChat) {
+                                    onStartChat('');
+                                }
+                            }}
+                        />
+                    </motion.div>
 
-          {/* Sidebar */}
+          {/* Clean Sidebar */}
           <motion.div variants={itemVariants} className="space-y-6">
-            {/* Stats Card */}
-            <div className={`${theme.colors.card} border rounded-3xl p-6 ${theme.shadows.glow}`}>
-              <h3 className={`font-medium ${theme.colors.text} mb-4`}>Your Progress</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className={`${theme.colors.textSecondary}`}>Conversations</span>
-                  <span className={`font-bold ${theme.colors.text}`}>{chatHistory.length}</span>
+            {/* Simple Progress Card */}
+            <div className={`${theme.colors.card} border rounded-2xl p-6 text-center`}>
+              <div className="mb-4">
+                <div className="text-3xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+                  {streakCount}
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className={`${theme.colors.textSecondary}`}>This week</span>
-                  <span className={`font-bold ${theme.colors.text}`}>12</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className={`${theme.colors.textSecondary}`}>Streak</span>
-                  <span className={`font-bold text-orange-500`}>{streakCount} days</span>
-                </div>
-                
-                {userTier === 'free' && (
-                  <div className="pt-4 border-t border-slate-200/20">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className={`text-sm ${theme.colors.textSecondary}`}>Today's usage</span>
-                      <span className={`text-sm font-medium ${theme.colors.text}`}>
-                        {dailyMessageCount}/5
-                      </span>
-                    </div>
-                    <div className="w-full bg-slate-200/20 rounded-full h-2">
-                      <div 
-                        className="bg-gradient-to-r from-cyan-500 to-teal-500 h-2 rounded-full transition-all"
-                        style={{ width: `${(dailyMessageCount / 5) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
+                <div className={`text-sm ${theme.colors.textSecondary}`}>day streak</div>
               </div>
+              
+              {userTier === 'explorer' && (
+                <div className="space-y-2">
+                  <div className={`text-sm ${theme.colors.textSecondary}`}>
+                    {dailyMessageCount}/10 messages today
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div 
+                      className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all"
+                      style={{ width: `${Math.min((dailyMessageCount / 10) * 100, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Achievements */}
