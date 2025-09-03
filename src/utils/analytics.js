@@ -476,3 +476,4 @@ export const usePerformanceMonitoring = () => {
 
   return { measureRenderTime, measureAsyncOperation };
 };
+

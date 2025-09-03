@@ -1,37 +1,29 @@
-// AURA AI - Million Dollar ChatGPT Wrapper
+// 🌌 AURA AI - Revolutionary AI Companion
 import React, { useState, useEffect, useRef } from 'react';
+import './ui/animations/cinematicAnimations.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Sparkles,
-  X, 
-  LogOut,
-  Heart
+  X
 } from 'lucide-react';
 import { auth, googleProvider } from './firebaseConfig';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
-import { createPremiumTheme, premiumModels, premiumSubscriptions, getTimeOfDay, detectUserMood } from './utils/premiumDesignSystem';
-import { 
-  detectEmotionalContext, 
-  classifyConversationTopic, 
-  generateContextualResponse,
-  saveConversationWithIntelligence,
-  detectConversationTopic,
-  generateConversationTitle
-} from './utils/conversationIntelligence';
-import PremiumLandingPage from './components/PremiumLandingPage';
-import PremiumChatInterface from './components/PremiumChatInterface';
-import HomeDashboard from './components/HomeDashboard';
+import { createCinematicTheme } from './ui/themes/cinematicDesign';
+import { premiumModels } from './core/utils/aiModels';
+import { getAIResponse } from './services/openaiService';
+// Revolutionary cinematic components
+import CinematicDashboard from './components/CinematicDashboard';
+import EnhancedChatInterface from './components/EnhancedChatInterface';
+import PremiumUpgrade from './components/PremiumUpgrade';
 import Journal from './components/Journal';
-import UpgradeScreen from './components/UpgradeScreen';
 
 const App = () => {
   // Core State
   const [user, setUser] = useState(null);
-  const [currentScreen, setCurrentScreen] = useState('landing'); // landing, auth, home, chat, journal, upgrade
+  const [currentScreen, setCurrentScreen] = useState('home'); // home, auth, chat, journal, upgrade
   const [chatHistory, setChatHistory] = useState([]);
   const [message, setMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [selectedModel, setSelectedModel] = useState('aura');
   
   // Premium State
@@ -43,15 +35,14 @@ const App = () => {
   const [password, setPassword] = useState('');
   const [authMode, setAuthMode] = useState('signin');
   
-  // UI State
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  // Conversation Management
+  const [conversations, setConversations] = useState([]);
+  const [currentConversationId, setCurrentConversationId] = useState(null);
 
   const messagesEndRef = useRef(null);
   
-  // Premium Theme system with time and mood awareness
-  const timeOfDay = getTimeOfDay();
-  const userMood = detectUserMood(chatHistory);
-  const theme = createPremiumTheme(isDarkMode, timeOfDay, userMood);
+  // Cinematic Theme system - Ultra modern
+  const theme = createCinematicTheme('dark', 'default');
   
   // Auth Functions
   const handleEmailAuth = async () => {
@@ -91,14 +82,111 @@ const App = () => {
     }
   };
 
+  // Daily Message Tracking
+  const updateDailyMessageCount = () => {
+    const today = new Date().toDateString();
+    const newCount = dailyMessageCount + 1;
+    setDailyMessageCount(newCount);
+    localStorage.setItem('dailyMessageData', JSON.stringify({
+      date: today,
+      count: newCount
+    }));
+  };
+
+  const getRemainingMessages = () => {
+    const limits = { explorer: 10, visionary: 50, genius: Infinity };
+    const limit = limits[userTier] || 10;
+    return limit === Infinity ? Infinity : Math.max(0, limit - dailyMessageCount);
+  };
+
+  // Conversation Management Functions
+  const handleNewConversation = () => {
+    // Save current conversation if it exists
+    if (chatHistory.length > 0 && currentConversationId) {
+      const updatedConversations = conversations.map(conv => 
+        conv.id === currentConversationId 
+          ? { ...conv, history: chatHistory, lastActive: new Date().toISOString() }
+          : conv
+      );
+      setConversations(updatedConversations);
+    }
+    
+    // Create new conversation
+    const newConversationId = Date.now().toString();
+    const newConversation = {
+      id: newConversationId, title: 'New Chat', history: [],
+      createdAt: new Date().toISOString(), lastActive: new Date().toISOString(),
+      pinned: false, likes: 0
+    };
+    setConversations(prev => [newConversation, ...prev]);
+    setCurrentConversationId(newConversationId);
+    setChatHistory([]);
+    setMessage('');
+  };
+
+  const handleSelectConversation = (conversation) => {
+    if (chatHistory.length > 0 && currentConversationId) {
+      const updatedConversations = conversations.map(conv => 
+        conv.id === currentConversationId 
+          ? { ...conv, history: chatHistory, lastActive: new Date().toISOString() }
+          : conv
+      );
+      setConversations(updatedConversations);
+    }
+    setCurrentConversationId(conversation.id);
+    setChatHistory(conversation.history || []);
+    setMessage('');
+  };
+
+  const handleDeleteConversation = (conversationId) => {
+    setConversations(prev => prev.filter(conv => conv.id !== conversationId));
+    if (currentConversationId === conversationId) {
+      setCurrentConversationId(null);
+      setChatHistory([]);
+      setMessage('');
+    }
+  };
+
+  const handleRenameConversation = (conversationId, newTitle) => {
+    setConversations(prev => prev.map(conv => 
+      conv.id === conversationId ? { ...conv, title: newTitle } : conv
+    ));
+  };
+
+  const handleClearAllConversations = () => {
+    if (window.confirm('Are you sure you want to clear all conversations? This cannot be undone.')) {
+      setConversations([]);
+      setCurrentConversationId(null);
+      setChatHistory([]);
+      setMessage('');
+      localStorage.removeItem('aura_current_conversation');
+      localStorage.removeItem('aura_conversations');
+      localStorage.removeItem('aura_conversation_history');
+    }
+  };
+
   // Chat Functions
   const sendMessage = async () => {
     if (!message.trim()) return;
     
+    // Create new conversation if none exists
+    if (!currentConversationId) {
+      const newConversationId = Date.now().toString();
+      const newConversation = {
+        id: newConversationId, title: 'New Chat', history: [],
+        createdAt: new Date().toISOString(), lastActive: new Date().toISOString(),
+        pinned: false, likes: 0
+      };
+      setConversations(prev => [newConversation, ...prev]);
+      setCurrentConversationId(newConversationId);
+      setChatHistory([]);
+      // Continue with sending the message instead of returning
+    }
+    
     // Check subscription limits
-    const currentTier = premiumSubscriptions[userTier];
-    if (currentTier.limit && dailyMessageCount >= currentTier.limit) {
-      // Show upgrade prompt
+    const remainingMessages = getRemainingMessages();
+    if (remainingMessages <= 0) {
+      alert(`You've reached your daily limit of messages. Upgrade to send more!`);
       setCurrentScreen('upgrade');
       return;
     }
@@ -123,48 +211,68 @@ const App = () => {
     setMessage('');
     setIsTyping(true);
     
-    // Increment message count for free users
-    if (userTier === 'explorer') {
-      setDailyMessageCount(prev => prev + 1);
+    // Increment message count for users with limits
+    if (userTier === 'explorer' || userTier === 'visionary') {
+      updateDailyMessageCount();
     }
     
-    // Enhanced AI response with conversation intelligence
-    setTimeout(() => {
-      const modelData = premiumModels[selectedModel];
-      
-      // Advanced emotional and topic analysis
-      const emotionalContext = detectEmotionalContext(userMessage.content, chatHistory);
-      const topicClassification = classifyConversationTopic(userMessage.content, chatHistory);
-      
-      const intelligentResponse = generateContextualResponse(
-        userMessage.content, 
-        modelData, 
-        topicClassification.primaryTopic, 
-        emotionalContext.emotion, 
-        chatHistory.slice(-4)
-      );
-      
-      const response = {
-        role: 'assistant',
-        content: intelligentResponse.content,
-        timestamp: new Date(),
-        model: selectedModel,
-        topic: topicClassification.primaryTopic,
-        mood: intelligentResponse.tone || 'thoughtful',
-        emotionalTone: emotionalContext.emotion,
-        confidence: emotionalContext.confidence,
-        urgency: emotionalContext.context.urgency,
-        id: Date.now() + Math.random()
-      };
-      
-      const finalHistory = [...chatHistory, userMessage, response];
-      setChatHistory(finalHistory);
-      
-      // Save conversation with advanced intelligence
-      saveConversationWithIntelligence(finalHistory, selectedModel, user?.uid || 'guest');
-      
-      setIsTyping(false);
-    }, selectedModelData.tier === 'premium' ? 2000 : 1500);
+    // Get AI response using the enhanced service
+    setTimeout(async () => {
+      try {
+        const aiResponse = await getAIResponse(userMessage.content, chatHistory, selectedModel, userTier);
+        
+        const response = {
+          role: 'assistant',
+          content: aiResponse.content,
+          timestamp: new Date(),
+          model: selectedModel,
+          usage: aiResponse.usage,
+          isMock: aiResponse.isMock || false,
+          id: Date.now() + Math.random()
+        };
+        
+        const finalHistory = [...chatHistory, userMessage, response];
+        setChatHistory(finalHistory);
+        
+        // Save conversation to localStorage and update conversations list
+        if (currentConversationId) {
+          const conversationData = {
+            id: currentConversationId,
+            title: finalHistory.length <= 2 ? finalHistory[0]?.content?.substring(0, 50) + '...' : conversations.find(c => c.id === currentConversationId)?.title || 'New Chat',
+            history: finalHistory,
+            model: selectedModel,
+            lastActive: new Date().toISOString(),
+            createdAt: conversations.find(c => c.id === currentConversationId)?.createdAt || new Date().toISOString()
+          };
+          
+          localStorage.setItem('aura_current_conversation', JSON.stringify(conversationData));
+          
+          // Update conversations list
+          const updatedConversations = conversations.map(conv => 
+            conv.id === currentConversationId ? conversationData : conv
+          );
+          setConversations(updatedConversations);
+          localStorage.setItem('aura_conversations', JSON.stringify(updatedConversations));
+        }
+        
+        setIsTyping(false);
+      } catch (error) {
+        console.error('Error getting AI response:', error);
+        
+        // Fallback response on error
+        const response = {
+          role: 'assistant',
+          content: "I'm having trouble processing that right now. Could you try rephrasing your question?",
+          timestamp: new Date(),
+          model: selectedModel,
+          error: true,
+          id: Date.now() + Math.random()
+        };
+        
+        setChatHistory(prev => [...prev, response]);
+        setIsTyping(false);
+      }
+    }, selectedModel === 'gpt-4' ? 2000 : 1500);
   };
 
 
@@ -200,10 +308,31 @@ const App = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory]);
 
-  // Load conversation history on app start
+  // Load conversation history and conversations on app start
   useEffect(() => {
     loadConversationHistory();
+    loadConversationsFromStorage();
   }, [user]);
+
+  // Load conversations from localStorage
+  const loadConversationsFromStorage = () => {
+    try {
+      const savedConversations = localStorage.getItem('aura_conversations');
+      if (savedConversations) {
+        const conversations = JSON.parse(savedConversations);
+        setConversations(conversations);
+        
+        // If there's a current conversation, set it as active
+        const currentConv = localStorage.getItem('aura_current_conversation');
+        if (currentConv) {
+          const current = JSON.parse(currentConv);
+          setCurrentConversationId(current.id);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading conversations:', error);
+    }
+  };
 
   // Start new conversation
   const startNewConversation = () => {
@@ -225,25 +354,18 @@ const App = () => {
     localStorage.setItem('aura_current_conversation', JSON.stringify(conversation));
   };
 
-  // Landing Page
-  if (currentScreen === 'landing') {
-    return (
-      <PremiumLandingPage
-        onGetStarted={() => setCurrentScreen('auth')}
-        onGuestAccess={() => {
-          setUser({ email: 'guest', uid: 'guest' });
-          setCurrentScreen('home');
-        }}
-        isDarkMode={isDarkMode}
-        setIsDarkMode={setIsDarkMode}
-      />
-    );
-  }
+  // Direct app entry - no landing page needed
 
   // Auth Screen
   if (currentScreen === 'auth') {
     return (
-      <div className={`min-h-screen ${theme.colors.bg} flex items-center justify-center px-4 py-8`}>
+      <div 
+        className="min-h-screen flex items-center justify-center px-4 py-8"
+        style={{
+          background: theme.gradients.background.mesh,
+          backgroundColor: theme.colors.bg.primary
+        }}
+      >
         <motion.div 
           className="max-w-sm w-full"
           initial={{ opacity: 0, y: 40 }}
@@ -251,16 +373,22 @@ const App = () => {
           transition={{ duration: 0.6 }}
         >
           <motion.div className="text-center mb-6 md:mb-8">
-            <h2 className={`text-2xl md:text-3xl font-light ${theme.colors.text} mb-2 md:mb-3`}>
+            <h2 className="text-2xl md:text-3xl font-light text-white mb-2 md:mb-3">
               {authMode === 'signin' ? 'Welcome back' : 'Join AURA AI'}
             </h2>
-            <p className={`${theme.colors.textSecondary} text-base md:text-lg`}>
+            <p className="text-slate-300 text-base md:text-lg">
               {authMode === 'signin' ? 'Sign in to continue' : 'Create your account'}
             </p>
           </motion.div>
 
           <motion.div 
-            className={`${theme.colors.card} border rounded-2xl md:rounded-3xl p-6 md:p-8 ${theme.shadows.glow}`}
+            className="border rounded-2xl md:rounded-3xl p-6 md:p-8 backdrop-blur-xl"
+            style={{
+              background: theme.gradients.glass.primary,
+              backgroundColor: 'rgba(17, 17, 17, 0.8)',
+              borderColor: 'rgba(20, 184, 166, 0.3)',
+              boxShadow: theme.shadows.glass.lg
+            }}
             layout
           >
             <div className="space-y-4 md:space-y-5">
@@ -269,7 +397,11 @@ const App = () => {
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className={`w-full p-4 md:p-4 rounded-xl md:rounded-2xl border ${theme.colors.input} backdrop-blur-sm transition-all focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 text-base md:text-sm`}
+                className="w-full p-4 md:p-4 rounded-xl md:rounded-2xl border backdrop-blur-sm transition-all focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 text-base md:text-sm text-white placeholder-gray-400"
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  borderColor: 'rgba(255, 255, 255, 0.2)'
+                }}
               />
               
               <input
@@ -278,12 +410,20 @@ const App = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleEmailAuth()}
-                className={`w-full p-4 md:p-4 rounded-xl md:rounded-2xl border ${theme.colors.input} backdrop-blur-sm transition-all focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 text-base md:text-sm`}
+                className="w-full p-4 md:p-4 rounded-xl md:rounded-2xl border backdrop-blur-sm transition-all focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 text-base md:text-sm text-white placeholder-gray-400"
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  borderColor: 'rgba(255, 255, 255, 0.2)'
+                }}
               />
               
               <motion.button
                 onClick={handleEmailAuth}
-                className={`w-full ${theme.colors.accent} text-white p-4 md:p-4 rounded-xl md:rounded-2xl font-medium ${theme.shadows.glow} hover:${theme.shadows.glowLg} transition-all text-base md:text-sm`}
+                className="w-full text-white p-4 md:p-4 rounded-xl md:rounded-2xl font-medium transition-all text-base md:text-sm"
+                style={{
+                  background: 'linear-gradient(135deg, #14b8a6 0%, #22c55e 100%)',
+                  boxShadow: '0 0 20px rgba(20, 184, 166, 0.3)'
+                }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
@@ -295,13 +435,17 @@ const App = () => {
                   <div className="w-full border-t border-slate-300/30"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className={`${theme.colors.bg} px-3 ${theme.colors.textMuted}`}>or</span>
+                  <span className="px-3 text-slate-400" style={{ backgroundColor: theme.colors.bg.primary }}>or</span>
                 </div>
               </div>
               
               <motion.button
                 onClick={handleGoogleAuth}
-                className={`w-full ${theme.colors.card} border p-4 rounded-2xl font-medium hover:${theme.shadows.glow} transition-all flex items-center justify-center space-x-3`}
+                className="w-full border p-4 rounded-2xl font-medium transition-all flex items-center justify-center space-x-3"
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  borderColor: 'rgba(255, 255, 255, 0.2)'
+                }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
@@ -310,13 +454,13 @@ const App = () => {
                   alt="Google" 
                   className="w-5 h-5"
                 />
-                <span className={theme.colors.text}>Continue with Google</span>
+                <span className="text-white">Continue with Google</span>
               </motion.button>
               
               <div className="text-center pt-4">
                 <button
                   onClick={() => setAuthMode(authMode === 'signin' ? 'signup' : 'signin')}
-                  className={`${theme.colors.textMuted} text-sm hover:${theme.colors.textSecondary} transition-colors`}
+                  className="text-slate-400 text-sm hover:text-slate-300 transition-colors"
                 >
                   {authMode === 'signin' 
                     ? "Don't have an account? Sign up" 
@@ -329,10 +473,10 @@ const App = () => {
           
           <div className="text-center mt-6">
             <button
-              onClick={() => setCurrentScreen('landing')}
-              className={`${theme.colors.textMuted} text-sm hover:${theme.colors.textSecondary} transition-colors`}
+              onClick={() => setCurrentScreen('home')}
+              className="text-slate-400 text-sm hover:text-slate-300 transition-colors"
             >
-              ← Back
+              ← Back to App
             </button>
           </div>
         </motion.div>
@@ -340,32 +484,28 @@ const App = () => {
     );
   }
 
-  // Home Dashboard
+  // Cinematic Dashboard - Revolutionary UI
   if (currentScreen === 'home') {
     return (
-              <HomeDashboard
-          theme={theme}
-          user={user}
-          onStartChat={(prompt = '') => {
-            console.log('onStartChat called with prompt:', prompt);
-            try {
-              if (prompt && prompt.trim()) {
-                setMessage(prompt.trim());
-              }
-              setCurrentScreen('chat');
-            } catch (error) {
-              console.error('Error in onStartChat:', error);
+      <CinematicDashboard 
+        user={user}
+        onStartChat={(prompt = '') => {
+          console.log('onStartChat called with prompt:', prompt);
+          try {
+            if (prompt && prompt.trim()) {
+              setMessage(prompt.trim());
             }
-          }}
-          onLoadConversation={loadConversation}
-          onOpenJournal={() => setCurrentScreen('journal')}
-          onOpenUpgrade={() => setCurrentScreen('upgrade')}
-          userTier={userTier}
-          dailyMessageCount={dailyMessageCount}
-          chatHistory={chatHistory}
-          selectedModel={selectedModel}
-          models={premiumModels}
-        />
+            setCurrentScreen('chat');
+          } catch (error) {
+            console.error('Error in onStartChat:', error);
+          }
+        }}
+        onNavigateToAuth={() => setCurrentScreen('auth')}
+        onNavigateToUpgrade={() => setCurrentScreen('upgrade')}
+        onNavigateToTrending={() => alert('Trending topics coming soon! 🔥')}
+        userTier={userTier}
+        dailyMessageCount={dailyMessageCount}
+      />
     );
   }
 
@@ -380,162 +520,38 @@ const App = () => {
     );
   }
 
-  // Upgrade Screen
+  // Premium Upgrade Screen
   if (currentScreen === 'upgrade') {
     return (
-      <UpgradeScreen
-        theme={theme}
+      <PremiumUpgrade
         onBack={() => setCurrentScreen('home')}
         currentTier={userTier}
       />
     );
   }
 
-  // Chat Interface
+  // Cinematic Chat Interface - Social Media AI
   if (currentScreen === 'chat') {
     return (
-      <>
-        <PremiumChatInterface
-          chatHistory={chatHistory}
-          message={message}
-          setMessage={setMessage}
-          sendMessage={sendMessage}
-          isTyping={isTyping}
-          selectedModel={selectedModel}
-          setSelectedModel={setSelectedModel}
-          models={premiumModels}
-          onMenuClick={() => setShowMobileMenu(true)}
-          handleKeyPress={handleKeyPress}
-          userTier={userTier}
-          dailyMessageCount={dailyMessageCount}
-          subscriptionTiers={premiumSubscriptions}
-          startNewConversation={startNewConversation}
-          user={user}
-          isDarkMode={isDarkMode}
-        />
-
-        {/* Settings Menu */}
-        <AnimatePresence>
-          {showMobileMenu && (
-            <motion.div
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end md:items-center md:justify-center"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowMobileMenu(false)}
-            >
-              <motion.div
-                className={`${theme.colors.card} border rounded-t-3xl md:rounded-3xl p-6 md:p-8 w-full md:max-w-sm ${theme.shadows.glowLg} max-h-[80vh] overflow-y-auto`}
-                initial={{ y: "100%", opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: "100%", opacity: 0 }}
-                transition={{ type: "spring", damping: 25, stiffness: 500 }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <h3 className={`font-medium ${theme.colors.text} text-lg`}>Menu</h3>
-                    <button
-                      onClick={() => setShowMobileMenu(false)}
-                      className={`${theme.colors.textSecondary} hover:${theme.colors.text} transition-colors`}
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-
-                  {/* Navigation */}
-                  <div className="space-y-3">
-                    <button
-                      onClick={() => {
-                        setCurrentScreen('home');
-                        setShowMobileMenu(false);
-                      }}
-                      className="w-full text-left p-4 md:p-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex items-center space-x-3"
-                    >
-                      <Sparkles className="w-6 h-6 md:w-5 md:h-5" />
-                      <span className="text-base md:text-sm">Home</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setCurrentScreen('journal');
-                        setShowMobileMenu(false);
-                      }}
-                      className={`w-full text-left p-4 md:p-3 rounded-xl hover:${theme.colors.card} transition-colors flex items-center space-x-3 ${
-                        userTier === 'free' ? 'opacity-60' : ''
-                      }`}
-                    >
-                      <Heart className="w-6 h-6 md:w-5 md:h-5" />
-                      <span className="text-base md:text-sm">Journal</span>
-                      {userTier === 'free' && (
-                        <div className="ml-auto bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1.5 md:px-2 md:py-1 rounded-full text-xs">
-                          Premium
-                        </div>
-                      )}
-                    </button>
-
-                    {userTier === 'free' && (
-                      <button
-                        onClick={() => {
-                          setCurrentScreen('upgrade');
-                          setShowMobileMenu(false);
-                        }}
-                        className="w-full text-left p-4 md:p-3 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 text-white transition-colors flex items-center space-x-3"
-                      >
-                        <Sparkles className="w-6 h-6 md:w-5 md:h-5" />
-                        <span className="text-base md:text-sm">Upgrade to Premium</span>
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="border-t border-slate-300/30 pt-4 space-y-4">
-                    {/* Subscription Status */}
-                    <div className="text-center">
-                      <div className={`text-sm ${theme.colors.textMuted} mb-1`}>Current Plan</div>
-                                                    <div className={`font-medium ${theme.colors.text}`}>
-                                {premiumSubscriptions[userTier].name}
-                              </div>
-                              {userTier === 'free' && (
-                                <div className={`text-xs ${theme.colors.textMuted} mt-1`}>
-                                  {dailyMessageCount}/{premiumSubscriptions[userTier].limit} messages today
-                                </div>
-                              )}
-                    </div>
-                    
-                    {/* Dark Mode Toggle */}
-                    <div className="flex items-center justify-between">
-                      <span className={`${theme.colors.text} font-medium`}>Dark Mode</span>
-                      <motion.button
-                        onClick={() => setIsDarkMode(!isDarkMode)}
-                        className={`w-14 h-8 rounded-full transition-colors ${
-                          isDarkMode ? 'bg-cyan-500' : 'bg-slate-300'
-                        }`}
-                        layout
-                      >
-                        <motion.div 
-                          className="w-6 h-6 bg-white rounded-full shadow-lg"
-                          animate={{ x: isDarkMode ? 28 : 4 }}
-                          transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                        />
-                      </motion.button>
-                    </div>
-                    
-                    {user?.email !== 'guest' && (
-                      <button
-                        onClick={handleSignOut}
-                        className={`w-full ${theme.colors.textSecondary} hover:${theme.colors.text} text-left transition-colors flex items-center space-x-3`}
-                      >
-                        <LogOut className="w-5 h-5" />
-                        <span>Sign Out</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </>
+      <EnhancedChatInterface
+        chatHistory={chatHistory}
+        message={message}
+        setMessage={setMessage}
+        sendMessage={sendMessage}
+        isTyping={isTyping}
+        onBack={() => setCurrentScreen('home')}
+        conversations={conversations}
+        currentConversationId={currentConversationId}
+        onSelectConversation={handleSelectConversation}
+        onNewConversation={handleNewConversation}
+        onDeleteConversation={handleDeleteConversation}
+        onRenameConversation={handleRenameConversation}
+        onClearAllConversations={handleClearAllConversations}
+        user={user}
+        userTier={userTier}
+        dailyMessageCount={dailyMessageCount}
+        remainingMessages={getRemainingMessages()}
+      />
     );
   }
 

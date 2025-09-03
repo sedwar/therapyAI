@@ -1,7 +1,10 @@
 {
   "name": "aura-ai-companion",
-  "version": "1.0.0",
+  "version": "2.0.0",
+  "description": "Revolutionary AI conversation platform with social media-inspired features",
   "private": true,
+  "keywords": ["ai", "chatgpt", "react", "conversation", "social", "premium"],
+  "author": "AURA AI Team",
   "dependencies": {
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",
@@ -19,7 +22,11 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "deploy": "node scripts/deploy.js",
+    "deploy:skip-tests": "node scripts/deploy.js --skip-tests",
+    "serve": "npx serve -s build",
+    "analyze": "npm run build && npx serve -s build"
   },
   "eslintConfig": {
     "extends": [
